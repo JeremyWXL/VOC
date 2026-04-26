@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from review_tagger.models import Review
 
-DEFAULT_DB_PATH = Path(tempfile.gettempdir()) / "review_tagger" / "review_tagger.db"
+DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent.parent.parent / "data" / "review_tagger.db"
 
 
 class Store:
