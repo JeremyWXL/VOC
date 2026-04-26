@@ -1,0 +1,319 @@
+[
+  {
+    "id": "74ee2ba0",
+    "name": "商品质量",
+    "children": [
+      {
+        "id": "dad3735b",
+        "name": "整体质量",
+        "children": [
+          {
+            "id": "dc1069b5",
+            "name": "质量好",
+            "children": []
+          },
+          {
+            "id": "b88ad09c",
+            "name": "质量差",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "0ccf169b",
+        "name": "面料材质",
+        "children": [
+          {
+            "id": "519ce648",
+            "name": "舒适",
+            "children": []
+          },
+          {
+            "id": "77f5e939",
+            "name": "不透气",
+            "children": []
+          },
+          {
+            "id": "1a575ebf",
+            "name": "起球",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "c2cde6e4",
+        "name": "做工细节",
+        "children": [
+          {
+            "id": "9b03ea00",
+            "name": "精细",
+            "children": []
+          },
+          {
+            "id": "088e857f",
+            "name": "粗糙",
+            "children": []
+          },
+          {
+            "id": "8f255021",
+            "name": "有线头",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "c51e9a15",
+        "name": "版型尺寸",
+        "children": [
+          {
+            "id": "0a42de99",
+            "name": "合身",
+            "children": []
+          },
+          {
+            "id": "131269eb",
+            "name": "偏大",
+            "children": []
+          },
+          {
+            "id": "f7b6e0c7",
+            "name": "偏小",
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "00d8a370",
+    "name": "物流服务",
+    "children": [
+      {
+        "id": "717985a2",
+        "name": "配送速度",
+        "children": [
+          {
+            "id": "53abc903",
+            "name": "速度快",
+            "children": []
+          },
+          {
+            "id": "90644ab9",
+            "name": "速度慢",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "965f3267",
+        "name": "包装完好",
+        "children": [
+          {
+            "id": "35bdcdc5",
+            "name": "包装精美",
+            "children": []
+          },
+          {
+            "id": "ce2bbf5e",
+            "name": "包装破损",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "1cdcebc5",
+        "name": "快递员服务",
+        "children": [
+          {
+            "id": "cf83c607",
+            "name": "态度好",
+            "children": []
+          },
+          {
+            "id": "03edf1af",
+            "name": "态度差",
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "560c3ca9",
+    "name": "价格感知",
+    "children": [
+      {
+        "id": "4ff8bb33",
+        "name": "价格水平",
+        "children": [
+          {
+            "id": "3b4ca582",
+            "name": "便宜",
+            "children": []
+          },
+          {
+            "id": "8aa94171",
+            "name": "贵",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "50ba7462",
+        "name": "性价比",
+        "children": [
+          {
+            "id": "81fdac9d",
+            "name": "性价比高",
+            "children": []
+          },
+          {
+            "id": "cb15023c",
+            "name": "性价比低",
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "477250aa",
+    "name": "用户行为",
+    "children": [
+      {
+        "id": "42a7c773",
+        "name": "复购意向",
+        "children": [
+          {
+            "id": "c62ac67b",
+            "name": "会回购",
+            "children": []
+          },
+          {
+            "id": "b60e5ca4",
+            "name": "不会回购",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "cd94e4cd",
+        "name": "推荐意愿",
+        "children": [
+          {
+            "id": "02663a02",
+            "name": "推荐",
+            "children": []
+          },
+          {
+            "id": "7d89f702",
+            "name": "不推荐",
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "f18621aa",
+    "name": "整体评价",
+    "children": [
+      {
+        "id": "08eb9e7f",
+        "name": "满意度",
+        "children": [
+          {
+            "id": "fa2ee286",
+            "name": "满意",
+            "children": []
+          },
+          {
+            "id": "d5b09edb",
+            "name": "一般",
+            "children": []
+          },
+          {
+            "id": "902ef3cb",
+            "name": "不满意",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "5f7e68c2",
+        "name": "惊喜度",
+        "children": [
+          {
+            "id": "ee76aa7f",
+            "name": "超预期",
+            "children": []
+          },
+          {
+            "id": "96d62213",
+            "name": "符合预期",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "9b4b75c8",
+        "name": "失望度",
+        "children": [
+          {
+            "id": "800a3cd4",
+            "name": "与描述不符",
+            "children": []
+          },
+          {
+            "id": "366e6076",
+            "name": "失望",
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "bf8baf17",
+    "name": "客服售后",
+    "children": [
+      {
+        "id": "de4f5029",
+        "name": "客服态度",
+        "children": [
+          {
+            "id": "99be53ad",
+            "name": "耐心",
+            "children": []
+          },
+          {
+            "id": "04301d54",
+            "name": "敷衍",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "1a7fd5fd",
+        "name": "售后处理",
+        "children": [
+          {
+            "id": "efff07b3",
+            "name": "处理快",
+            "children": []
+          },
+          {
+            "id": "5cdcea11",
+            "name": "处理慢",
+            "children": []
+          },
+          {
+            "id": "6c993728",
+            "name": "推诿",
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+]

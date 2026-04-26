@@ -1,0 +1,3426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOC智能分析引擎 - 观远数据</title>
+<link rel="icon" href="https://guandata-official-website.oss-cn-hangzhou.aliyuncs.com/assets/favicon.ico" type="image/x-icon">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #f0f2f5;
+    color: #333;
+    line-height: 1.5;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+  /* Header */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+  }
+  header h1 { font-size: 22px; color: #222; }
+  .api-box {
+    display: flex; align-items: center; gap: 8px; font-size: 13px;
+  }
+  .api-box input {
+    padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px;
+    font-size: 13px; width: 220px;
+  }
+  .api-box .status {
+    width: 10px; height: 10px; border-radius: 50%; background: #ccc;
+  }
+  .api-box .status.ok { background: #52c41a; }
+  .api-box .status.err { background: #ff4d4f; }
+
+  /* Steps */
+  .step {
+    background: #fff; border-radius: 10px; padding: 24px;
+    margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    position: relative;
+  }
+  .step-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 18px;
+  }
+  .step-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+    color: #fff; display: flex;
+    align-items: center; justify-content: center; font-weight: 600;
+    font-size: 15px; flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(24,144,255,0.35);
+  }
+  .step-title { font-size: 16px; font-weight: 600; }
+  .step-desc { font-size: 13px; color: #666; margin-top: 2px; }
+
+  /* Forms */
+  .form-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .form-group { flex: 1; min-width: 220px; }
+  .form-group label {
+    display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: #444;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px;
+    font-size: 14px; font-family: inherit;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none; border-color: #1890ff; box-shadow: 0 0 0 3px rgba(33,150,243,0.08);
+  }
+  .form-group input[type="file"] { padding: 6px; }
+  .form-group small { color: #888; font-size: 12px; margin-top: 4px; display: block; }
+
+  /* Buttons */
+  .btn {
+    padding: 8px 18px; border: 1px solid #ddd; border-radius: 6px;
+    background: #fff; cursor: pointer; font-size: 13px; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { background: #f5f5f5; border-color: #bbb; }
+  .btn-primary { background: #1890ff; color: #fff; border-color: #1890ff; }
+  .btn-primary:hover { background: #096dd9; }
+  .btn-success { background: #52c41a; color: #fff; border-color: #52c41a; }
+  .btn-success:hover { background: #43a047; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Drop zone */
+  .dropzone {
+    border: 2px dashed #ccc; border-radius: 8px; padding: 28px;
+    text-align: center; color: #666; cursor: pointer; transition: all 0.2s;
+    background: #fafafa;
+  }
+  .dropzone:hover, .dropzone.dragover { border-color: #1890ff; background: #e6f7ff; }
+  .dropzone .icon { font-size: 32px; margin-bottom: 8px; }
+  .dropzone p { font-size: 14px; }
+  .dropzone small { font-size: 12px; color: #999; }
+  .file-info {
+    display: flex; align-items: center; gap: 10px; margin-top: 10px;
+    padding: 10px 14px; background: #e6f7ff; border-radius: 6px;
+    border: 1px solid #91d5ff; font-size: 13px;
+  }
+  .file-info .remove { color: #ff4d4f; cursor: pointer; margin-left: auto; font-size: 18px; line-height: 1; }
+
+  /* Preview table */
+  .preview-table {
+    width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px;
+    max-height: 300px; overflow: auto; display: block;
+  }
+  .preview-table thead th {
+    background: linear-gradient(180deg, #f0f2f5 0%, #e8e8e8 100%);
+    padding: 10px 12px; text-align: left;
+    font-weight: 600; border-bottom: 2px solid #1890ff; white-space: nowrap;
+    position: sticky; top: 0;
+    color: #262626;
+  }
+  .preview-table tbody td {
+    padding: 8px 10px; border-bottom: 1px solid #f0f0f0;
+    max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .preview-table tbody tr:hover { background: #fafafa; }
+
+  /* Progress */
+  .progress-wrap { margin: 16px 0; }
+  .progress-bar-bg {
+    height: 10px; background: #e8e8e8; border-radius: 5px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; background: #1890ff; width: 0%; transition: width 0.3s;
+    border-radius: 5px;
+  }
+  .progress-text { font-size: 13px; color: #666; margin-top: 6px; }
+
+  /* Result */
+  .result-area { margin-top: 16px; }
+  .result-actions { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+
+  /* Toast */
+  .toast {
+    position: fixed; top: 72px; right: 20px; padding: 12px 20px;
+    border-radius: 10px; color: #fff; font-size: 14px; z-index: 1001;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15); transform: translateX(120%);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-width: 380px; word-break: break-word;
+    backdrop-filter: blur(8px);
+  }
+  .toast.show { transform: translateX(0); }
+  .toast.ok { background: #52c41a; }
+  .toast.err { background: #ff4d4f; }
+  .toast.info { background: #1890ff; }
+
+  /* Collapsible */
+  .collapsible summary {
+    cursor: pointer; font-size: 13px; color: #1890ff; user-select: none;
+    margin-top: 8px;
+  }
+  .collapsible[open] summary { margin-bottom: 10px; }
+
+  /* Prompt preview */
+  pre.code {
+    background: #263238; color: #aed581; padding: 14px; border-radius: 6px;
+    font-size: 12px; overflow: auto; max-height: 400px; white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* Spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 14px; height: 14px; border: 2px solid #fff;
+    border-top-color: transparent; border-radius: 50%;
+    animation: spin 0.8s linear infinite; display: inline-block;
+  }
+
+  /* ====== NEW STYLES ====== */
+  /* Mode tabs */
+  .mode-tabs {
+    display: flex; gap: 4px; margin-bottom: 20px;
+    background: #fff; padding: 6px; border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .mode-tab {
+    padding: 8px 18px; border-radius: 6px; cursor: pointer;
+    font-size: 14px; font-weight: 500; border: none; background: transparent;
+    color: #666; transition: all 0.2s;
+  }
+  .mode-tab:hover { background: #f0f2f5; }
+  .mode-tab.active { background: #1890ff; color: #fff; }
+
+  /* Incremental options */
+  .incremental-wrap {
+    margin-top: 10px; padding: 12px; background: #f0f2f5;
+    border-radius: 6px; display: none;
+  }
+
+  /* Review panel */
+  .review-panel { margin-top: 0; }
+  .filter-bar {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center;
+  }
+  .filter-bar select, .filter-bar input {
+    padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;
+  }
+  .filter-bar input { width: 200px; }
+
+  /* Review table */
+  .review-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+  }
+  .review-table thead th {
+    background: #f0f2f5; padding: 8px 10px; text-align: left;
+    font-weight: 600; border-bottom: 1px solid #e0e0e0; white-space: nowrap;
+    position: sticky; top: 0;
+  }
+  .review-table tbody td {
+    padding: 8px 10px; border-bottom: 1px solid #f0f0f0; vertical-align: top;
+  }
+  .review-table tbody tr:hover { background: #fafafa; }
+  .review-table tbody tr.editing { background: #e3f2fd; }
+  .review-table tbody tr.editing:hover { background: #e3f2fd; }
+
+  /* Tag pills */
+  .tag-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 12px; background: #e3f2fd;
+    color: #1565c0; font-size: 12px; margin: 2px; white-space: nowrap;
+  }
+  .tag-pill::before {
+    content: ""; width: 6px; height: 6px; border-radius: 50%;
+    background: #1890ff; display: inline-block;
+  }
+
+  /* Status badges */
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 11px; font-weight: 500;
+  }
+  .badge-normal { background: #f5f5f5; color: #666; }
+  .badge-uncertain { background: #fff8e1; color: #f57f17; }
+  .badge-rejected { background: #ffebee; color: #c62828; }
+  .badge-reviewed { background: #e8f5e9; color: #2e7d32; }
+  .badge-tagged { background: #f5f5f5; color: #666; }
+  .badge-pending { background: #f5f5f5; color: #666; }
+
+  /* Score bar */
+  .score-bar {
+    width: 60px; height: 6px; background: #e0e0e0; border-radius: 3px;
+    overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px;
+  }
+  .score-bar-fill { height: 100%; border-radius: 3px; }
+  .score-high { background: #52c41a; }
+  .score-mid { background: #ff9800; }
+  .score-low { background: #ff4d4f; }
+
+  /* Pagination */
+  .pagination {
+    display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 16px;
+  }
+  .pagination button {
+    padding: 4px 10px; font-size: 12px; min-width: 32px; justify-content: center;
+  }
+  .pagination button.active {
+    background: #1890ff; color: #fff; border-color: #1890ff;
+  }
+  .pagination .page-info { font-size: 13px; color: #666; }
+
+  /* Batch bar */
+  .batch-bar {
+    display: none; gap: 8px; margin-bottom: 10px; align-items: center;
+    padding: 10px; background: #fff8e1; border-radius: 6px; border: 1px solid #ffe082;
+  }
+  .batch-bar span { font-size: 13px; color: #666; }
+
+  /* Inline edit */
+  .inline-edit-form {
+    margin-top: 8px; padding: 10px; background: #fff;
+    border: 1px solid #91d5ff; border-radius: 6px;
+  }
+  .tag-form-row {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; align-items: center;
+  }
+  .tag-form-row select, .tag-form-row input {
+    padding: 5px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;
+  }
+  .current-edit-tags {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;
+  }
+  .edit-tag-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 12px; background: #e3f2fd;
+    color: #1565c0; font-size: 12px;
+  }
+  .edit-tag-pill .remove-tag {
+    cursor: pointer; color: #ff4d4f; font-size: 14px; line-height: 1;
+  }
+
+  /* Audit mode */
+  .audit-input-row {
+    display: flex; gap: 10px; align-items: center;
+  }
+  .audit-input-row input {
+    flex: 1; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;
+  }
+
+  /* Content cell */
+  .content-cell {
+    max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  /* Small dropzone */
+  .dropzone-small {
+    border: 2px dashed #ccc; border-radius: 8px; padding: 16px;
+    text-align: center; color: #666; cursor: pointer; transition: all 0.2s;
+    background: #fafafa; font-size: 13px;
+  }
+  .dropzone-small:hover, .dropzone-small.dragover { border-color: #1890ff; background: #e6f7ff; }
+  .dropzone-small.dragover { background: #e6f7ff; }
+
+  /* Tag profile list */
+  .profile-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; background: #e6f7ff; border-radius: 6px;
+    border: 1px solid #91d5ff; font-size: 13px; margin-bottom: 8px;
+  }
+  .profile-card .profile-name { font-weight: 600; color: #1565c0; }
+  .profile-card .profile-desc { color: #888; font-size: 12px; }
+  .profile-card .remove { color: #ff4d4f; cursor: pointer; margin-left: auto; font-size: 18px; line-height: 1; }
+
+  /* Mapping rule row */
+  .mapping-rule {
+    display: flex; gap: 8px; align-items: center;
+    padding: 10px 12px; background: #fafafa; border-radius: 6px;
+    border: 1px solid #e0e0e0; flex-wrap: wrap;
+  }
+  .mapping-rule select, .mapping-rule input {
+    padding: 5px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;
+  }
+  .mapping-rule .rule-num {
+    width: 22px; height: 22px; border-radius: 50%; background: #1890ff;
+    color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .mapping-rule .remove-rule {
+    color: #ff4d4f; cursor: pointer; font-size: 16px; margin-left: auto;
+  }
+  .mapping-rule .condition-row {
+    display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+  }
+
+  /* ====== 观远品牌设计系统 ====== */
+  :root {
+    --gd-primary: #1890ff;
+    --gd-primary-dark: #096dd9;
+    --gd-primary-light: #40a9ff;
+    --gd-primary-bg: #e6f7ff;
+    --gd-bg: #f0f2f5;
+    --gd-card: #ffffff;
+    --gd-sidebar: #001529;
+    --gd-success: #52c41a;
+    --gd-warning: #faad14;
+    --gd-danger: #ff4d4f;
+    --gd-text: #333333;
+    --gd-text-secondary: #666666;
+    --gd-border: #e8e8e8;
+    --gd-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    --gd-shadow-hover: 0 8px 24px rgba(24,144,255,0.12);
+  }
+
+  /* Brand Navbar */
+  .gd-navbar {
+    background: linear-gradient(135deg, #001529 0%, #002140 50%, #001529 100%);
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .gd-navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .gd-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+  }
+  .gd-logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 16px;
+    box-shadow: 0 2px 8px rgba(24,144,255,0.4);
+  }
+  .gd-logo-text {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .gd-logo-sub {
+    color: rgba(255,255,255,0.6);
+    font-size: 13px;
+    margin-left: 12px;
+    padding-left: 12px;
+    border-left: 1px solid rgba(255,255,255,0.2);
+  }
+  .gd-navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .gd-badge {
+    background: rgba(24,144,255,0.2);
+    color: #40a9ff;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    border: 1px solid rgba(24,144,255,0.3);
+  }
+
+  /* Background decoration */
+  .gd-bg-pattern {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(24,144,255,0.03) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(24,144,255,0.02) 0%, transparent 40%),
+      radial-gradient(circle at 60% 80%, rgba(24,144,255,0.02) 0%, transparent 45%);
+  }
+
+  /* Enhanced step card */
+  .step {
+    background: var(--gd-card);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 20px;
+    box-shadow: var(--gd-shadow);
+    position: relative;
+    border: 1px solid var(--gd-border);
+    transition: box-shadow 0.3s, transform 0.2s;
+  }
+  .step:hover {
+    box-shadow: var(--gd-shadow-hover);
+  }
+  .step::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gd-primary) 0%, var(--gd-primary-light) 100%);
+    border-radius: 12px 12px 0 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .step:hover::before { opacity: 1; }
+
+  /* Enhanced buttons */
+  .btn-primary {
+    background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 2px 6px rgba(24,144,255,0.3);
+  }
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #096dd9 0%, #1890ff 100%);
+    box-shadow: 0 4px 12px rgba(24,144,255,0.4);
+    transform: translateY(-1px);
+  }
+  .btn-success {
+    background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+    border-color: transparent;
+    box-shadow: 0 2px 6px rgba(82,196,26,0.3);
+  }
+  .btn-success:hover {
+    background: linear-gradient(135deg, #389e0d 0%, #52c41a 100%);
+    box-shadow: 0 4px 12px rgba(82,196,26,0.4);
+    transform: translateY(-1px);
+  }
+
+  /* Enhanced dropzone */
+  .dropzone {
+    border: 2px dashed #d9d9d9;
+    border-radius: 10px;
+    padding: 32px;
+    text-align: center;
+    color: #8c8c8c;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #fafafa;
+    position: relative;
+    overflow: hidden;
+  }
+  .dropzone::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, rgba(24,144,255,0.02) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .dropzone:hover, .dropzone.dragover {
+    border-color: #1890ff;
+    background: #e6f7ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(24,144,255,0.1);
+  }
+
+  /* Progress bar */
+  .progress-bar-fill {
+    background: linear-gradient(90deg, #1890ff 0%, #40a9ff 100%);
+  }
+
+  /* Mode tabs enhanced */
+  .mode-tabs {
+    display: flex; gap: 4px; margin-bottom: 24px;
+    background: #fff; padding: 6px; border-radius: 12px;
+    box-shadow: var(--gd-shadow);
+    border: 1px solid var(--gd-border);
+  }
+  .mode-tab {
+    padding: 10px 22px; border-radius: 8px; cursor: pointer;
+    font-size: 14px; font-weight: 500; border: none; background: transparent;
+    color: #595959; transition: all 0.25s;
+    position: relative;
+  }
+  .mode-tab:hover { background: #f5f5f5; color: #1890ff; }
+  .mode-tab.active {
+    background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(24,144,255,0.3);
+  }
+
+  /* Toast enhanced */
+  .toast.ok { background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%); }
+  .toast.err { background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%); }
+  .toast.info { background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%); }
+
+  /* Animation */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .step { animation: fadeInUp 0.5s ease-out; }
+  .step:nth-child(2) { animation-delay: 0.1s; }
+  .step:nth-child(3) { animation-delay: 0.2s; }
+  .step:nth-child(4) { animation-delay: 0.3s; }
+</style>
+</head>
+<body>
+<!-- 观远品牌导航栏 -->
+<nav class="gd-navbar">
+  <div class="gd-navbar-left">
+    <a class="gd-logo" href="#">
+      <img src="/static/logo_guandata_white.png" alt="观远数据" style="height:28px;width:auto;object-fit:contain">
+      <span class="gd-logo-sub">VOC智能分析引擎</span>
+    </a>
+  </div>
+  <div class="gd-navbar-right">
+    <span class="gd-badge">AI + BI 智能分析</span>
+    <span class="gd-badge" style="background:rgba(82,196,26,0.15);color:#52c41a;border-color:rgba(82,196,26,0.25)">产品原型</span>
+  </div>
+</nav>
+
+<div class="gd-bg-pattern"></div>
+
+<div class="container" style="position:relative;z-index:1">
+  <header style="margin-bottom:20px">
+    <div class="api-box" style="margin-left:auto">
+      <span style="color:#8c8c8c;font-size:13px">API 地址:</span>
+      <input type="text" id="apiBase" placeholder="默认相对路径" value="" style="border-color:#d9d9d9">
+      <div class="status" id="apiStatus" title="点击检测连通性" style="cursor:pointer"></div>
+    </div>
+  </header>
+
+  <!-- Mode Tabs -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="tag" onclick="switchMode('tag')">打标模式</button>
+    <button class="mode-tab" data-mode="library" onclick="switchMode('library')">🏷️ 标签库</button>
+    <button class="mode-tab" data-mode="dashboard" onclick="switchMode('dashboard')">任务看板</button>
+    <button class="mode-tab" data-mode="audit" onclick="switchMode('audit')">审核模式</button>
+  </div>
+
+  <!-- Tag Mode Panel -->
+  <div id="tagModePanel">
+    <!-- Step 1: 评论数据 -->
+    <section class="step">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-title">评论数据</div>
+          <div class="step-desc">上传评论 Excel/CSV，系统将自动识别列名</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <div class="dropzone" id="reviewDropzone">
+            <div class="icon">📄</div>
+            <p>点击或拖拽上传评论文件</p>
+            <small>支持 .csv / .xlsx</small>
+          </div>
+          <div id="reviewFileInfo" style="display:none"></div>
+          <input type="file" id="reviewFileInput" accept=".csv,.xlsx,.xls" style="display:none">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label>评论内容列</label>
+          <select id="contentColumn"><option value="">请先上传文件</option></select>
+          <label style="margin-top:12px">评论 ID 列 <small style="display:inline;color:#999">(可选)</small></label>
+          <select id="idColumn"><option value="">请先上传文件</option></select>
+        </div>
+      </div>
+      <div id="reviewPreviewWrap" style="display:none;margin-top:12px">
+        <strong style="font-size:13px">数据预览（前5行）</strong>
+        <div style="overflow:auto;border:1px solid #eee;border-radius:6px;margin-top:6px">
+          <table class="preview-table" id="reviewPreviewTable">
+            <thead></thead><tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- 增量打标选项 -->
+      <div style="margin-top:14px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;font-weight:500">
+          <input type="checkbox" id="enableIncremental" onchange="toggleIncremental()"> 增量打标（仅对新增评论打标）
+        </label>
+        <div class="incremental-wrap" id="incrementalOptions">
+          <div class="form-row" style="margin-bottom:8px">
+            <div class="form-group" style="flex:2;min-width:260px">
+              <label>上传上次的结果文件</label>
+              <div class="dropzone-small" id="prevDropzone">
+                <span id="prevDropText">点击或拖拽上传上次的结果 CSV/Excel</span>
+              </div>
+              <div id="prevFileInfo" style="display:none;margin-top:8px"></div>
+              <input type="file" id="prevFileInput" accept=".csv,.xlsx,.xls" style="display:none">
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom:0">
+            <div class="form-group" style="flex:1;min-width:200px">
+              <label>策略</label>
+              <select id="incrementalStrategy">
+                <option value="skip_existing">skip_existing — 仅跳过已打标</option>
+                <option value="re_tag_all">re_tag_all — 全部重新打标</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 2: 标签体系 -->
+    <section class="step">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-title">标签体系</div>
+          <div class="step-desc">上传标签体系，或配置多维度映射规则（需先上传评论数据以识别列名）</div>
+        </div>
+      </div>
+
+      <!-- 模式切换 -->
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn" id="btnSingleMode" onclick="setTagMode('single')" style="background:#1890ff;color:#fff;border-color:#1890ff">单标签体系</button>
+        <button class="btn" id="btnMultiMode" onclick="setTagMode('multi')">多维度映射</button>
+      </div>
+
+      <!-- 单标签体系模式 -->
+      <div id="singleTagMode">
+        <!-- AI 智能生成入口 -->
+        <div id="aiTagGenWrap" style="display:none;margin-bottom:16px">
+          <div style="background:linear-gradient(135deg,#e6f7ff 0%,#f0f8ff 100%);border:1px dashed #1890ff;border-radius:10px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#1890ff 0%,#40a9ff 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex-shrink:0">✨</div>
+              <div>
+                <div style="font-size:14px;font-weight:600;color:#096dd9">AI 智能生成标签体系</div>
+                <div style="font-size:12px;color:#555;margin-top:2px">根据评论内容自动识别业务场景，一键生成配套标签</div>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="btnDetectScene" onclick="detectScene()" style="flex-shrink:0">
+              <span id="detectSceneText">🎯 识别场景并生成</span>
+            </button>
+          </div>
+          <div id="sceneDetectResult" style="display:none;margin-top:10px;padding:10px 14px;background:#f6ffed;border-radius:8px;border:1px solid #b7eb8f;font-size:13px;color:#333"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex:2">
+            <div class="dropzone" id="tagDropzone">
+              <div class="icon">📂</div>
+              <p>点击或拖拽上传标签体系文件</p>
+              <small>支持 .csv / .xlsx，需包含「一级标签、二级标签、三级标签」列</small>
+            </div>
+            <div id="tagFileInfo" style="display:none"></div>
+            <input type="file" id="tagFileInput" accept=".csv,.xlsx,.xls" style="display:none">
+            <div id="presetTagWrap" style="margin-top:12px">
+              <label style="font-size:13px;font-weight:500;color:#444;display:block;margin-bottom:6px">或从标签库选择</label>
+              <div id="tagSystemSelector" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <button class="btn" onclick="switchMode('library')" id="btnSelectTagSystem" style="border:1px dashed #1890ff;color:#1890ff;background:#e6f7ff">📚 打开标签库</button>
+                <span id="selectedTagSystemName" style="font-size:13px;color:#555;display:none"></span>
+                <button class="btn" id="btnClearTagSystem" onclick="clearSelectedTagSystem()" style="display:none;font-size:12px;padding:4px 8px;color:#ff4d4f;border-color:#ff4d4f">清除</button>
+              </div>
+            </div>
+            <div style="margin-top:12px">
+              <button class="btn btn-primary" onclick="openTagEditor()">🎨 编辑标签体系</button>
+              <small style="display:inline;margin-left:8px">打开画布编辑器，完成后导出 CSV 上传即可</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 多维度映射模式 -->
+      <div id="multiTagMode" style="display:none">
+        <!-- 标签方案上传 -->
+        <div style="margin-bottom:16px">
+          <div style="font-size:14px;font-weight:600;margin-bottom:10px">📚 标签方案管理</div>
+          <div class="dropzone-small" id="profileDropzone">
+            <span>点击或拖拽上传标签体系文件（可上传多个）</span>
+          </div>
+          <input type="file" id="profileFileInput" accept=".csv,.xlsx,.xls" multiple style="display:none">
+          <div id="profileList" style="margin-top:10px"></div>
+        </div>
+
+        <!-- 映射规则配置 -->
+        <div style="margin-bottom:16px">
+          <div style="font-size:14px;font-weight:600;margin-bottom:10px">🔗 映射规则配置</div>
+          <div style="font-size:12px;color:#888;margin-bottom:10px">
+            根据评论数据中的列值，自动匹配对应的标签方案。规则从上到下优先匹配。
+          </div>
+          <div id="mappingRulesContainer" style="display:flex;flex-direction:column;gap:8px"></div>
+          <button class="btn" onclick="addMappingRule()" style="margin-top:10px">+ 添加规则</button>
+        </div>
+
+        <!-- 默认方案 -->
+        <div style="margin-bottom:16px">
+          <div style="font-size:14px;font-weight:600;margin-bottom:10px">🛡️ 默认方案</div>
+          <div class="form-row" style="margin-bottom:0">
+            <div class="form-group" style="flex:1">
+              <select id="defaultProfileSelect">
+                <option value="">-- 请选择默认方案（无规则匹配时使用）--</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 映射预览 -->
+        <div style="margin-bottom:16px">
+          <button class="btn" id="btnPreviewMapping" onclick="previewMapping()" disabled>🔍 预览映射结果</button>
+          <div id="mappingPreviewWrap" style="display:none;margin-top:10px">
+            <strong style="font-size:13px">映射预览（前50条）</strong>
+            <div style="overflow:auto;border:1px solid #eee;border-radius:6px;margin-top:6px;max-height:300px">
+              <table class="preview-table" id="mappingPreviewTable"><thead></thead><tbody></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 3: LLM 配置 -->
+    <section class="step">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-title">LLM 配置</div>
+          <div class="step-desc">选择模型提供商并填写 API Key</div>
+        </div>
+      </div>
+      <div class="form-row" style="align-items:flex-end;margin-bottom:14px">
+        <div class="form-group" style="flex:2">
+          <label>API 配置选择</label>
+          <select id="apiConfigSelect">
+            <option value="">-- 手动填写 --</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;display:flex;gap:8px">
+          <button class="btn" onclick="openApiConfigManager()" style="white-space:nowrap">⚙ 管理配置</button>
+          <button class="btn btn-primary" onclick="saveCurrentApiConfig()" style="white-space:nowrap">💾 保存当前</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>提供商</label>
+          <select id="provider">
+            <option value="openai" selected>OpenAI</option>
+            <option value="deepseek">DeepSeek</option>
+            <option value="dashscope">DashScope (阿里)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>模型名称</label>
+          <input type="text" id="model" value="gpt-4o-mini">
+        </div>
+        <div class="form-group" style="flex:2">
+          <label>API Key <span style="color:#ff4d4f">*</span></label>
+          <input type="password" id="apiKey" placeholder="sk-...">
+          <small>密钥保存在浏览器本地，Base64 编码存储</small>
+        </div>
+      </div>
+      <details class="collapsible">
+        <summary>高级选项 ▾</summary>
+        <div class="form-row">
+          <div class="form-group">
+            <label>自定义 Base URL</label>
+            <input type="text" id="baseUrl" placeholder="https://api.openai.com/v1">
+          </div>
+          <div class="form-group">
+            <label>并发数</label>
+            <input type="number" id="concurrency" value="5" min="1" max="50">
+          </div>
+          <div class="form-group">
+            <label>每批条数</label>
+            <input type="number" id="batchSize" value="10" min="1" max="200">
+          </div>
+          <div class="form-group">
+            <label>置信度阈值</label>
+            <input type="number" id="confidenceThreshold" value="0.7" min="0" max="1" step="0.05">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label><input type="checkbox" id="useJsonMode" checked> 使用 JSON Mode</label>
+            <small>部分模型（如豆包）不支持，取消勾选可提升兼容性</small>
+          </div>
+          <div class="form-group">
+            <label>输出格式</label>
+            <select id="outputFormat">
+              <option value="wide" selected>宽格式（每评论一行）</option>
+              <option value="long">长格式（每标签一行）</option>
+            </select>
+          </div>
+        </div>
+        <div style="border-top:1px solid #eee;margin-top:14px;padding-top:14px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px">⚡ 分片并行加速（大数据量推荐）</div>
+          <div class="form-row" style="margin-bottom:8px">
+            <div class="form-group" style="flex:1">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" id="enableSharding"> 启用分片并行
+              </label>
+              <small>数据量 &gt; 200 条时建议开启，将数据分成多个子任务并行调用 LLM</small>
+            </div>
+            <div class="form-group" style="flex:1">
+              <label>每片子任务大小</label>
+              <input type="number" id="shardSize" value="200" min="50" max="1000" step="50">
+              <small>每片子任务处理的评论条数</small>
+            </div>
+            <div class="form-group" style="flex:1">
+              <label>最大并行子任务数</label>
+              <input type="number" id="maxShards" value="10" min="2" max="50">
+              <small>同时运行的最大子任务数</small>
+            </div>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <!-- Step 4: 执行 -->
+    <section class="step">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <div>
+          <div class="step-title">执行打标</div>
+          <div class="step-desc">预览 Prompt 或直接开始批量打标</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:16px">
+        <button class="btn" id="btnPreviewPrompt">🔍 预览 Prompt</button>
+        <button class="btn btn-primary" id="btnStartTag">▶ 开始打标</button>
+        <button class="btn btn-success" id="btnDownload" style="display:none">⬇ 下载结果</button>
+      </div>
+      <div id="promptPreviewWrap" style="display:none;margin-bottom:16px">
+        <strong style="font-size:13px">Prompt 预览</strong>
+        <pre class="code" id="promptPreview"></pre>
+      </div>
+      <div id="progressWrap" class="progress-wrap" style="display:none">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">准备中...</div>
+      </div>
+      <div id="resultWrap" class="result-area" style="display:none">
+        <strong style="font-size:13px">结果预览（前10行）</strong>
+        <div style="overflow:auto;border:1px solid #eee;border-radius:6px;margin-top:6px">
+          <table class="preview-table" id="resultPreviewTable">
+            <thead></thead><tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="errorWrap" style="display:none;margin-top:12px;padding:12px;background:#ffebee;border-radius:6px;color:#c62828;font-size:13px;white-space:pre-wrap"></div>
+      <!-- 审核工作区 -->
+      <div id="step4ReviewContainer" style="margin-top:20px"></div>
+    </section>
+  </div>
+
+  <!-- Audit Mode Panel -->
+  <div id="auditModePanel" style="display:none;">
+    <section class="step">
+      <div class="step-header">
+        <div class="step-num">🔍</div>
+        <div>
+          <div class="step-title">审核任务</div>
+          <div class="step-desc">输入任务ID加载评论数据进行人工修正与审核</div>
+        </div>
+      </div>
+      <div class="audit-input-row">
+        <input type="text" id="auditTaskId" placeholder="输入任务ID，如 abc123">
+        <button class="btn btn-primary" onclick="loadAuditTask()">加载评论</button>
+        <button class="btn" id="btnLoadRecent" onclick="loadRecentTask()" style="display:none">加载最近任务</button>
+      </div>
+    </section>
+    <div id="auditReviewContainer"></div>
+  </div>
+
+  <!-- Dashboard Mode Panel -->
+  <div id="dashboardModePanel" style="display:none;">
+    <section class="step">
+      <div class="step-header">
+        <div class="step-num">📊</div>
+        <div>
+          <div class="step-title">任务看板</div>
+          <div class="step-desc">查看所有打标任务的统计信息、标签分布与数据质量概览</div>
+        </div>
+      </div>
+      <div id="dashboardTaskList"></div>
+      <div id="dashboardTaskDetail" style="display:none;margin-top:20px"></div>
+    </section>
+  </div>
+
+  <!-- Tag Library Panel -->
+  <div id="tagLibraryPanel" style="display:none;">
+    <section class="step">
+      <div class="step-header">
+        <div class="step-num">🏷️</div>
+        <div>
+          <div class="step-title">标签库</div>
+          <div class="step-desc">管理所有标签体系，支持预置标签、AI 生成标签和自定义标签的集中管理</div>
+        </div>
+      </div>
+
+      <!-- 操作栏 -->
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;background:#f6ffed;border-radius:8px;border:1px solid #b7eb8f;">
+        <input type="text" id="tagLibrarySearch" placeholder="搜索标签体系..." style="flex:1;min-width:160px;padding:8px 12px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px" oninput="renderTagLibrary()">
+        <select id="tagLibrarySceneFilter" style="padding:8px 12px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px" onchange="renderTagLibrary()">
+          <option value="">所有场景</option>
+        </select>
+        <button class="btn" onclick="toggleLibraryView()" id="btnLibraryView">☰ 列表视图</button>
+        <button class="btn btn-primary" onclick="createNewTagSystem()">➕ 新建</button>
+        <button class="btn" onclick="importTagSystemFromFile()">📥 导入</button>
+        <input type="file" id="tagLibraryImportInput" accept=".csv" style="display:none" onchange="handleTagSystemImport(this)">
+      </div>
+
+      <!-- 统计卡片 -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px;">
+        <div style="background:#fff;padding:12px 16px;border-radius:8px;border:1px solid #e8e8e8;text-align:center;">
+          <div style="font-size:24px;font-weight:700;color:#1890ff" id="libStatTotal">0</div>
+          <div style="font-size:12px;color:#888">标签体系总数</div>
+        </div>
+        <div style="background:#fff;padding:12px 16px;border-radius:8px;border:1px solid #e8e8e8;text-align:center;">
+          <div style="font-size:24px;font-weight:700;color:#52c41a" id="libStatPreset">0</div>
+          <div style="font-size:12px;color:#888">预置标签</div>
+        </div>
+        <div style="background:#fff;padding:12px 16px;border-radius:8px;border:1px solid #e8e8e8;text-align:center;">
+          <div style="font-size:24px;font-weight:700;color:#fa8c16" id="libStatCustom">0</div>
+          <div style="font-size:12px;color:#888">自定义标签</div>
+        </div>
+      </div>
+
+      <!-- 内容区 -->
+      <div id="tagLibraryContent">
+        <div id="tagLibraryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;"></div>
+        <div id="tagLibraryList" style="display:none;"></div>
+        <div id="tagLibraryEmpty" style="display:none;text-align:center;padding:60px 20px;color:#888">
+          <div style="font-size:48px;margin-bottom:12px">📭</div>
+          <div style="font-size:16px;margin-bottom:8px">暂无标签体系</div>
+          <div style="font-size:13px">点击「新建」创建空白标签体系，或在打标模式让 AI 自动生成</div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- 标签编辑器弹层 -->
+<div id="tagEditorModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:12px;width:100%;max-width:1200px;height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #e0e0e0;background:#f0f2f5;flex-shrink:0;">
+      <div style="font-size:16px;font-weight:600;color:#333">🎨 标签体系画布编辑器</div>
+      <button class="btn" onclick="closeTagEditor()" style="font-size:13px">✕ 关闭</button>
+    </div>
+    <iframe id="tagEditorFrame" src="app_tag_config.html" style="flex:1;border:none;width:100%;height:100%;"></iframe>
+  </div>
+</div>
+
+
+<!-- 编辑器返回处理弹层 -->
+<div id="editorReturnModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1002;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:12px;width:100%;max-width:480px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #e0e0e0;background:#f0f2f5;flex-shrink:0;">
+      <div style="font-size:16px;font-weight:600;color:#333">🎨 编辑器返回</div>
+      <button class="btn" onclick="closeEditorReturnModal()" style="font-size:13px">✕</button>
+    </div>
+    <div style="padding:20px;">
+      <p style="margin:0 0 16px;font-size:14px;color:#555">标签体系已编辑完成，请选择下一步操作：</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="useEditorCsvForTask()">✅ 用于当前任务</button>
+        <button class="btn" onclick="saveEditorCsvToLibrary()" style="background:#52c41a;color:#fff;border-color:#52c41a">💾 保存到标签库</button>
+        <button class="btn" onclick="closeEditorReturnModal()">取消</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- API 配置管理弹层 -->
+<div id="apiConfigModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1001;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:12px;width:100%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #e0e0e0;background:#f0f2f5;flex-shrink:0;">
+      <div style="font-size:16px;font-weight:600;color:#333">🔑 API 配置管理</div>
+      <button class="btn" onclick="closeApiConfigManager()" style="font-size:13px">✕ 关闭</button>
+    </div>
+    <div style="padding:20px;overflow:auto;flex:1;">
+      <div id="apiConfigList" style="margin-bottom:16px"></div>
+      <div style="border-top:1px solid #eee;padding-top:16px">
+        <strong style="font-size:14px" id="apiConfigFormTitle">新增配置</strong>
+        <div class="form-row" style="margin-top:10px">
+          <div class="form-group" style="flex:1">
+            <label>配置名称</label>
+            <input type="text" id="cfgName" placeholder="如：公司 OpenAI">
+          </div>
+          <div class="form-group" style="flex:1">
+            <label>提供商</label>
+            <select id="cfgProvider">
+              <option value="openai">OpenAI</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="dashscope">DashScope</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1">
+            <label>模型</label>
+            <input type="text" id="cfgModel" placeholder="gpt-4o-mini">
+          </div>
+          <div class="form-group" style="flex:1">
+            <label>Base URL（可选）</label>
+            <input type="text" id="cfgBaseUrl" placeholder="https://api.openai.com/v1">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1">
+            <label>API Key</label>
+            <input type="password" id="cfgApiKey" placeholder="sk-...">
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:10px">
+          <button class="btn btn-primary" onclick="submitApiConfig()">保存</button>
+          <button class="btn" onclick="resetApiConfigForm()">重置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 标签明细弹窗（任务看板点击标签后打开） -->
+<div id="tagDetailModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1002;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:12px;width:100%;max-width:900px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #e0e0e0;background:#f0f2f5;flex-shrink:0;">
+      <div style="font-size:16px;font-weight:600;color:#333">🏷️ 标签明细 — <span id="tagDetailTitle"></span></div>
+      <button class="btn" onclick="closeTagDetailModal()" style="font-size:13px">✕ 关闭</button>
+    </div>
+    <div style="padding:16px;overflow:auto;flex:1;">
+      <div style="font-size:13px;color:#666;margin-bottom:10px" id="tagDetailInfo"></div>
+      <div style="overflow:auto;border:1px solid #eee;border-radius:6px;max-height:65vh">
+        <table class="review-table" id="tagDetailTable">
+          <thead>
+            <tr>
+              <th>评论ID</th>
+              <th>评论内容</th>
+              <th>当前标签</th>
+              <th style="width:70px">状态</th>
+              <th style="width:80px">操作</th>
+            </tr>
+          </thead>
+          <tbody id="tagDetailTableBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="tagDetailPagination" style="margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ====== 工具函数 ======
+const $ = (sel) => document.querySelector(sel);
+const API = () => ($('#apiBase').value || '').replace(/\/$/, '') || '';
+
+function toast(msg, type='info') {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function setApiStatus(ok) {
+  const el = $('#apiStatus');
+  el.className = 'status ' + (ok ? 'ok' : 'err');
+}
+
+async function checkApi() {
+  try {
+    const res = await fetch(API() + '/api/tasks/test404', { method: 'GET' });
+    setApiStatus(true);
+  } catch(e) {
+    setApiStatus(false);
+  }
+}
+
+function buildFormData(obj) {
+  const fd = new FormData();
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== null && v !== undefined) fd.append(k, v);
+  }
+  return fd;
+}
+
+function renderTable(tableEl, rows, columns) {
+  const thead = tableEl.querySelector('thead');
+  const tbody = tableEl.querySelector('tbody');
+  thead.innerHTML = '<tr>' + columns.map(c => `<th>${c}</th>`).join('') + '</tr>';
+  tbody.innerHTML = rows.map(r => '<tr>' + columns.map(c => `<td title="${(r[c]||'').toString().replace(/"/g,'&quot;')}">${r[c]||''}</td>`).join('') + '</tr>').join('');
+}
+
+// ====== 文件上传 ======
+let tagFile = null, reviewFile = null, prevOutputFile = null;
+let currentTagMode = 'single';  // 'single' | 'multi'
+let tagProfiles = [];           // {profile_id, name, file_path, columns, row_count}
+let mappingRules = [];          // {id, name, conditions: [{column, op, value}], profile_id, priority}
+let currentMappingConfigKey = null;
+
+function setupDropzone(dropId, inputId, infoId, onUpload, opts={}) {
+  const drop = $(dropId), input = $(inputId), info = $(infoId);
+  if (!drop) return;
+  drop.addEventListener('click', () => input.click());
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('dragover'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+  drop.addEventListener('drop', (e) => {
+    e.preventDefault(); drop.classList.remove('dragover');
+    const f = e.dataTransfer.files[0]; if (f) handleFile(f);
+  });
+  input.addEventListener('change', () => { const f = input.files[0]; if (f) handleFile(f); });
+
+  async function handleFile(file) {
+    if (!file.name.match(/\.(csv|xlsx|xls)$/i)) { toast('仅支持 CSV / Excel 文件', 'err'); return; }
+    const fd = new FormData(); fd.append('file', file);
+    try {
+      const res = await fetch(API() + '/api/upload', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error((await res.json()).detail || '上传失败');
+      const data = await res.json();
+      onUpload(data, file);
+      info.style.display = 'block';
+      info.innerHTML = `<div class="file-info"><span>📎 ${file.name}</span><span style="color:#888">(${data.row_count} 行, ${data.columns.length} 列)</span><span class="remove" title="移除">&times;</span></div>`;
+      info.querySelector('.remove').onclick = () => {
+        onUpload(null, null); info.style.display = 'none';
+        if (opts.showDropzone) opts.showDropzone();
+      };
+      if (opts.hideDropzone) opts.hideDropzone();
+      toast('上传成功', 'ok');
+    } catch(e) {
+      toast('上传失败: ' + e.message, 'err');
+    }
+  }
+}
+
+setupDropzone('#tagDropzone', '#tagFileInput', '#tagFileInfo', (data, file) => {
+  tagFile = data;
+  if (file && file.name.endsWith('.csv')) {
+    const reader = new FileReader();
+    reader.onload = (e) => { tagFile.csvContent = e.target.result; };
+    reader.readAsText(file);
+  }
+});
+setupDropzone('#reviewDropzone', '#reviewFileInput', '#reviewFileInfo', (data) => {
+  reviewFile = data;
+  if (data) {
+    const cols = data.columns;
+    const opts = cols.map(c => `<option value="${c}">${c}</option>`).join('');
+    $('#contentColumn').innerHTML = opts;
+    $('#idColumn').innerHTML = '<option value="">(无)</option>' + opts;
+    const guess = cols.find(c => /内容|评论|text|content/i.test(c));
+    if (guess) $('#contentColumn').value = guess;
+    $('#reviewPreviewWrap').style.display = 'block';
+    renderTable($('#reviewPreviewTable'), data.preview, cols);
+    // 评论文件上传后，更新映射规则中的列选项并启用预览按钮
+    renderMappingRules();
+    $('#btnPreviewMapping').disabled = false;
+    // 显示自动场景识别入口
+    $('#aiTagGenWrap').style.display = 'block';
+  } else {
+    $('#contentColumn').innerHTML = '<option value="">请先上传文件</option>';
+    $('#idColumn').innerHTML = '<option value="">请先上传文件</option>';
+    $('#reviewPreviewWrap').style.display = 'none';
+    $('#aiTagGenWrap').style.display = 'none';
+  }
+});
+
+// 增量结果文件上传
+setupDropzone('#prevDropzone', '#prevFileInput', '#prevFileInfo', (data) => {
+  prevOutputFile = data;
+}, {
+  hideDropzone: () => { $('#prevDropzone').style.display = 'none'; },
+  showDropzone: () => { $('#prevDropzone').style.display = 'block'; }
+});
+
+function toggleIncremental() {
+  const enabled = $('#enableIncremental').checked;
+  $('#incrementalOptions').style.display = enabled ? 'block' : 'none';
+}
+
+// ====== Prompt 预览 ======
+$('#btnPreviewPrompt').addEventListener('click', async () => {
+  let tagFileId = null;
+  if (currentTagMode === 'single') {
+    if (!tagFile) { toast('请先上传标签体系文件', 'err'); return; }
+    tagFileId = tagFile.file_id;
+  } else {
+    if (!tagProfiles.length) { toast('请先上传标签方案', 'err'); return; }
+    const opts = tagProfiles.map((p, i) => `${i + 1}. ${p.name}`).join('\n');
+    const choice = prompt(`选择要预览的方案（输入序号 1-${tagProfiles.length}）：\n${opts}`, '1');
+    if (!choice) return;
+    const idx = parseInt(choice, 10) - 1;
+    if (idx < 0 || idx >= tagProfiles.length) { toast('无效选择', 'err'); return; }
+    tagFileId = tagProfiles[idx].file_path;
+  }
+  const reviewText = prompt('输入一条示例评论：', '衣服质量很好，但是物流太慢了');
+  if (!reviewText) return;
+  const fd = buildFormData({
+    review_text: reviewText,
+    tag_file_id: tagFileId,
+    provider: $('#provider').value,
+    model: $('#model').value,
+  });
+  try {
+    const res = await fetch(API() + '/api/preview-prompt', { method: 'POST', body: fd });
+    if (!res.ok) throw new Error((await res.json()).detail);
+    const data = await res.json();
+    $('#promptPreview').textContent = data.prompt;
+    $('#promptPreviewWrap').style.display = 'block';
+  } catch(e) {
+    toast('预览失败: ' + e.message, 'err');
+  }
+});
+
+// ====== 打标执行 ======
+let currentTaskId = null;
+let eventSource = null;
+
+function resetResult() {
+  $('#progressWrap').style.display = 'none';
+  $('#resultWrap').style.display = 'none';
+  $('#errorWrap').style.display = 'none';
+  $('#btnDownload').style.display = 'none';
+  $('#progressFill').style.width = '0%';
+  $('#step4ReviewContainer').innerHTML = '';
+  if (eventSource) { eventSource.close(); eventSource = null; }
+}
+
+$('#btnStartTag').addEventListener('click', async () => {
+  if (!reviewFile) { toast('请先上传评论文件', 'err'); return; }
+  if (!$('#apiKey').value.trim()) { toast('请填写 API Key', 'err'); return; }
+
+  const isMulti = currentTagMode === 'multi';
+  if (isMulti) {
+    if (!tagProfiles.length) { toast('请至少上传一个标签方案', 'err'); return; }
+    if (!mappingRules.length) { toast('请至少配置一条映射规则', 'err'); return; }
+  } else {
+    if (!tagFile) { toast('请先上传标签体系文件', 'err'); return; }
+  }
+
+  resetResult();
+  $('#progressWrap').style.display = 'block';
+  $('#btnStartTag').disabled = true;
+  $('#btnStartTag').innerHTML = '<span class="spinner"></span> 启动中...';
+
+  const commonData = {
+    review_file_id: reviewFile.file_id,
+    content_column: $('#contentColumn').value,
+    id_column: $('#idColumn').value || null,
+    output_format: $('#outputFormat').value,
+    provider: $('#provider').value,
+    model: $('#model').value,
+    api_key: $('#apiKey').value.trim(),
+    base_url: $('#baseUrl').value.trim() || null,
+    concurrency: parseInt($('#concurrency').value, 10),
+    batch_size: parseInt($('#batchSize').value, 10),
+    use_json_mode: $('#useJsonMode').checked,
+    confidence_threshold: parseFloat($('#confidenceThreshold').value),
+    sharding_enabled: $('#enableSharding').checked,
+    shard_size: parseInt($('#shardSize').value, 10) || 200,
+    max_shards: parseInt($('#maxShards').value, 10) || 10,
+  };
+
+  try {
+    let res;
+    if (isMulti) {
+      // 先保存映射配置
+      const config = buildMappingConfig();
+      const configRes = await fetch(API() + '/api/tag-mapping-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      });
+      if (!configRes.ok) throw new Error((await configRes.json()).detail || '保存映射配置失败');
+      const configData = await configRes.json();
+      const fd = buildFormData({ ...commonData, config_key: configData.config_key });
+      res = await fetch(API() + '/api/tag-multi', { method: 'POST', body: fd });
+    } else {
+      let tagParam = {};
+    if (tagFile && tagFile.tag_system_id) {
+      tagParam = { tag_system_id: tagFile.tag_system_id };
+    } else if (tagFile && tagFile.file_id) {
+      tagParam = { tag_file_id: tagFile.file_id };
+    }
+    const fd = buildFormData({ ...commonData, ...tagParam });
+      if ($('#enableIncremental').checked && prevOutputFile) {
+        fd.append('previous_output_path', prevOutputFile.file_id);
+        fd.append('strategy', $('#incrementalStrategy').value);
+      }
+      res = await fetch(API() + '/api/tag', { method: 'POST', body: fd });
+    }
+    if (!res.ok) throw new Error((await res.json()).detail || '启动失败');
+    const data = await res.json();
+    currentTaskId = data.task_id;
+    startSSE(currentTaskId);
+    toast('打标任务已启动', 'ok');
+  } catch(e) {
+    $('#btnStartTag').disabled = false;
+    $('#btnStartTag').innerHTML = '▶ 开始打标';
+    $('#progressWrap').style.display = 'none';
+    toast('启动失败: ' + e.message, 'err');
+  }
+});
+
+function startSSE(taskId) {
+  const url = API() + '/api/tasks/' + taskId + '/events';
+  eventSource = new EventSource(url);
+
+  eventSource.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if (data.type === 'progress') {
+      const pct = data.total > 0 ? Math.round(data.done / data.total * 100) : 0;
+      $('#progressFill').style.width = pct + '%';
+      $('#progressText').textContent = `${data.done} / ${data.total} (${pct}%) — ${data.status === 'running' ? '打标中...' : data.status}`;
+    } else if (data.type === 'end') {
+      eventSource.close(); eventSource = null;
+      $('#btnStartTag').disabled = false;
+      $('#btnStartTag').innerHTML = '▶ 开始打标';
+      if (data.status === 'completed') {
+        $('#progressText').textContent = '✅ 打标完成';
+        $('#btnDownload').style.display = 'inline-flex';
+        if (data.preview && data.preview.length) {
+          $('#resultWrap').style.display = 'block';
+          const cols = Object.keys(data.preview[0]);
+          renderTable($('#resultPreviewTable'), data.preview, cols);
+        }
+        saveRecentTask(taskId);
+        initReviewPanel('step4ReviewContainer');
+        loadAllReviews(taskId);
+        toast('打标完成', 'ok');
+      } else {
+        $('#progressText').textContent = '❌ 打标失败';
+        $('#errorWrap').style.display = 'block';
+        $('#errorWrap').textContent = data.error || '未知错误';
+        toast('打标失败，请查看错误信息', 'err');
+      }
+    }
+  };
+
+  eventSource.onerror = () => {
+    eventSource.close(); eventSource = null;
+    $('#btnStartTag').disabled = false;
+    $('#btnStartTag').innerHTML = '▶ 开始打标';
+  };
+}
+
+// ====== 下载 ======
+$('#btnDownload').addEventListener('click', () => {
+  if (!currentTaskId) return;
+  const a = document.createElement('a');
+  a.href = API() + '/api/download/' + currentTaskId;
+  a.download = 'tagged_reviews.csv';
+  a.click();
+});
+
+// ====== 预置标签体系 ======
+async function loadPresetTags() {
+  try {
+    const res = await fetch(API() + '/api/preset-tags');
+    if (!res.ok) return;
+    const data = await res.json();
+    const sel = $('#presetTagSelect');
+    if (!data.presets || !data.presets.length) {
+      $('#presetTagWrap').style.display = 'none';
+      return;
+    }
+    sel.innerHTML = '<option value="">-- 请选择 --</option>' +
+      data.presets.map(p => `<option value="${encodeURIComponent(JSON.stringify(p))}">${p.category}/${p.name} (${p.row_count}行)</option>`).join('');
+  } catch(e) {
+    console.log('加载预置标签体系失败', e);
+  }
+}
+
+$('#presetTagSelect').addEventListener('change', () => {
+  const val = $('#presetTagSelect').value;
+  if (!val) return;
+  const p = JSON.parse(decodeURIComponent(val));
+  tagFile = {
+    file_id: p.path,
+    filename: p.name,
+    columns: p.columns,
+    row_count: p.row_count,
+  };
+  $('#tagDropzone').style.display = 'none';
+  const info = $('#tagFileInfo');
+  info.style.display = 'block';
+  info.innerHTML = `<div class="file-info"><span>📎 ${p.name}</span><span style="color:#888">(${p.row_count} 行, ${p.columns.length} 列)</span><span class="remove" title="移除">&times;</span></div>`;
+  info.querySelector('.remove').onclick = () => {
+    tagFile = null;
+    info.style.display = 'none';
+    $('#tagDropzone').style.display = 'block';
+    $('#presetTagSelect').value = '';
+  };
+});
+
+// ====== 模式切换 ======
+function switchMode(mode) {
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+  $('#tagModePanel').style.display = mode === 'tag' ? 'block' : 'none';
+  $('#auditModePanel').style.display = mode === 'audit' ? 'block' : 'none';
+  $('#dashboardModePanel').style.display = mode === 'dashboard' ? 'block' : 'none';
+  $('#tagLibraryPanel').style.display = mode === 'library' ? 'block' : 'none';
+  if (mode === 'audit') {
+    const recent = getRecentTask();
+    const btn = $('#btnLoadRecent');
+    if (recent) { btn.style.display = 'inline-flex'; btn.title = recent; }
+    else { btn.style.display = 'none'; }
+    const hash = location.hash;
+    if (hash.startsWith('#audit=') && !$('#auditTaskId').value) {
+      $('#auditTaskId').value = hash.slice(7);
+      loadAuditTask();
+    }
+  }
+  if (mode === 'dashboard') {
+    loadDashboard();
+  }
+  if (mode === 'library') {
+    loadTagLibrary();
+  }
+}
+
+// ====== 本地存储最近任务 ======
+function saveRecentTask(taskId) {
+  try { localStorage.setItem('recentTaskId', taskId); } catch(e) {}
+}
+function getRecentTask() {
+  try { return localStorage.getItem('recentTaskId'); } catch(e) { return null; }
+}
+function loadRecentTask() {
+  const id = getRecentTask();
+  if (id) { $('#auditTaskId').value = id; loadAuditTask(); }
+}
+
+// ====== 审核工作区 ======
+let reviewPanelState = {
+  taskId: null,
+  allReviews: [],
+  total: 0,
+  page: 1,
+  pageSize: 20,
+  filterStatus: 'all',
+  filterLevel1: 'all',
+  searchKeyword: '',
+  tagHierarchy: {},
+  editingId: null,
+  selectedIds: new Set(),
+};
+let editTagMap = {};
+
+function initReviewPanel(containerId) {
+  const container = $('#' + containerId);
+  if (!container) return;
+  container.innerHTML = `
+    <section class="step review-panel">
+      <div class="step-header">
+        <div class="step-num">✏️</div>
+        <div>
+          <div class="step-title">结果审核</div>
+          <div class="step-desc">人工修正模糊评论、删除虚假评论、确认标签</div>
+        </div>
+      </div>
+      <div class="batch-bar" id="batchBar-${containerId}">
+        <span id="batchCount-${containerId}">已选 0 条</span>
+        <button class="btn btn-success" onclick="batchMarkReviewed('${containerId}')">批量标记为已审核</button>
+        <button class="btn" style="color:#ff4d4f;border-color:#ff4d4f" onclick="batchDelete('${containerId}')">批量删除虚假评论</button>
+        <button class="btn" onclick="clearSelection('${containerId}')">取消选择</button>
+      </div>
+      <div class="filter-bar">
+        <select id="filterStatus-${containerId}">
+          <option value="all">全部状态</option>
+          <option value="normal">正常</option>
+          <option value="uncertain">模糊</option>
+          <option value="rejected">虚假</option>
+          <option value="reviewed">已审核</option>
+        </select>
+        <select id="filterLevel1-${containerId}">
+          <option value="all">全部一级标签</option>
+        </select>
+        <input type="text" id="searchKeyword-${containerId}" placeholder="搜索评论内容...">
+        <button class="btn" onclick="applyFilters('${containerId}')">筛选</button>
+        <button class="btn" onclick="resetFilters('${containerId}')">重置</button>
+      </div>
+      <div style="overflow:auto;border:1px solid #eee;border-radius:6px;max-height:600px">
+        <table class="review-table">
+          <thead>
+            <tr>
+              <th style="width:30px"><input type="checkbox" id="selectAll-${containerId}" onclick="toggleSelectAll('${containerId}')"></th>
+              <th>评论ID</th>
+              <th>评论内容</th>
+              <th>当前标签</th>
+              <th style="width:60px">是否模糊</th>
+              <th style="width:110px">真实性评分</th>
+              <th style="width:70px">状态</th>
+              <th style="width:110px">操作</th>
+            </tr>
+          </thead>
+          <tbody id="reviewTableBody-${containerId}"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="reviewPagination-${containerId}"></div>
+      <div style="margin-top:8px;font-size:12px;color:#888;" id="reviewCountInfo-${containerId}"></div>
+    </section>
+  `;
+  // Bind enter key on search
+  const searchInput = $(`#searchKeyword-${containerId}`);
+  if (searchInput) {
+    searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyFilters(containerId); });
+  }
+}
+
+async function loadAllReviews(taskId) {
+  reviewPanelState.taskId = taskId;
+  reviewPanelState.allReviews = [];
+  reviewPanelState.page = 1;
+  reviewPanelState.selectedIds.clear();
+  try {
+    const url = `${API()}/api/tasks/${taskId}/reviews?page=1&page_size=9999`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      if (res.status === 404) { toast('任务不存在，请检查任务ID', 'err'); return; }
+      throw new Error((await res.json()).detail || '加载失败');
+    }
+    const data = await res.json();
+    reviewPanelState.allReviews = data.reviews || [];
+    reviewPanelState.total = data.total || 0;
+
+    // 尝试从任务获取标签体系
+    await loadTaskTagHierarchy(taskId);
+
+    // 如果还没有标签体系，从评论标签动态构建
+    if (!Object.keys(reviewPanelState.tagHierarchy).length) {
+      reviewPanelState.tagHierarchy = buildHierarchyFromReviews(reviewPanelState.allReviews);
+    }
+    updateLevel1Filter();
+    applyFiltersAndRender();
+  } catch(e) {
+    toast('加载评论失败: ' + e.message, 'err');
+  }
+}
+
+async function loadTaskTagHierarchy(taskId) {
+  try {
+    const res = await fetch(API() + '/api/tasks/' + taskId);
+    if (!res.ok) return;
+    const task = await res.json();
+    const tagPath = task.tag_file_path;
+    if (!tagPath) return;
+    const hRes = await fetch(API() + '/api/tag-hierarchy?file_id=' + encodeURIComponent(tagPath));
+    if (!hRes.ok) return;
+    const hData = await hRes.json();
+    reviewPanelState.tagHierarchy = hData.hierarchy || {};
+  } catch(e) {
+    console.log('加载标签体系失败', e);
+  }
+}
+
+function buildHierarchyFromReviews(reviews) {
+  const tree = {};
+  reviews.forEach(r => {
+    (r.tags || []).forEach(t => {
+      const l1 = t.level1 || '其他';
+      const l2 = t.level2 || '';
+      const l3 = t.level3 || '';
+      const l4 = t.level4 || '';
+      if (!l1) return;
+      if (!tree[l1]) tree[l1] = {};
+      if (!tree[l1][l2]) tree[l1][l2] = {};
+      if (!tree[l1][l2][l3]) tree[l1][l2][l3] = [];
+      if (l4 && !tree[l1][l2][l3].includes(l4)) tree[l1][l2][l3].push(l4);
+    });
+  });
+  return tree;
+}
+
+function updateLevel1Filter() {
+  const containers = ['step4ReviewContainer', 'auditReviewContainer'];
+  containers.forEach(cid => {
+    const sel = $(`#filterLevel1-${cid}`);
+    if (!sel) return;
+    const val = sel.value;
+    const l1s = Object.keys(reviewPanelState.tagHierarchy).sort();
+    let opts = '<option value="all">全部一级标签</option>';
+    l1s.forEach(l1 => { if (l1) opts += `<option value="${l1}">${l1}</option>`; });
+    sel.innerHTML = opts;
+    sel.value = val || 'all';
+  });
+}
+
+function getFilteredReviews() {
+  let list = reviewPanelState.allReviews || [];
+  if (reviewPanelState.filterStatus !== 'all') {
+    list = list.filter(r => r.status === reviewPanelState.filterStatus);
+  }
+  if (reviewPanelState.filterLevel1 !== 'all') {
+    list = list.filter(r => (r.tags || []).some(t => t.level1 === reviewPanelState.filterLevel1));
+  }
+  if (reviewPanelState.searchKeyword.trim()) {
+    const kw = reviewPanelState.searchKeyword.trim().toLowerCase();
+    list = list.filter(r => (r.content || '').toLowerCase().includes(kw));
+  }
+  return list;
+}
+
+function applyFilters(containerId) {
+  reviewPanelState.filterStatus = $(`#filterStatus-${containerId}`).value;
+  reviewPanelState.filterLevel1 = $(`#filterLevel1-${containerId}`).value;
+  reviewPanelState.searchKeyword = $(`#searchKeyword-${containerId}`).value;
+  reviewPanelState.page = 1;
+  applyFiltersAndRender();
+}
+
+function resetFilters(containerId) {
+  $(`#filterStatus-${containerId}`).value = 'all';
+  $(`#filterLevel1-${containerId}`).value = 'all';
+  $(`#searchKeyword-${containerId}`).value = '';
+  applyFilters(containerId);
+}
+
+function applyFiltersAndRender() {
+  const filtered = getFilteredReviews();
+  const total = filtered.length;
+  const start = (reviewPanelState.page - 1) * reviewPanelState.pageSize;
+  const end = start + reviewPanelState.pageSize;
+  const pageItems = filtered.slice(start, end);
+  reviewPanelState.total = total;
+  reviewPanelState.reviews = pageItems;
+  renderReviewTable(pageItems);
+  renderPagination(Math.max(1, Math.ceil(total / reviewPanelState.pageSize)));
+  const info = document.querySelector('#reviewCountInfo-step4ReviewContainer, #reviewCountInfo-auditReviewContainer');
+  if (info) info.textContent = `共 ${total} 条${total !== reviewPanelState.allReviews.length ? '（筛选后）' : ''}，每页 ${reviewPanelState.pageSize} 条`;
+}
+
+function renderReviewTable(rows) {
+  const containerIds = ['step4ReviewContainer', 'auditReviewContainer'];
+  containerIds.forEach(cid => {
+    const tbody = $(`#reviewTableBody-${cid}`);
+    const selectAll = $(`#selectAll-${cid}`);
+    if (!tbody) return;
+    if (selectAll) selectAll.checked = false;
+    tbody.innerHTML = rows.map(r => renderReviewRow(r, cid)).join('');
+    updateBatchBars();
+  });
+}
+
+function renderReviewRow(r, containerId) {
+  const isEditing = reviewPanelState.editingId === r.id;
+  if (isEditing) {
+    return `<tr class="editing"><td colspan="8">${renderEditForm(r, containerId)}</td></tr>`;
+  }
+  const checked = reviewPanelState.selectedIds.has(r.id) ? 'checked' : '';
+  const uncertainStr = r.uncertain ? '<span style="color:#f57f17;font-weight:600">是</span>' : '<span style="color:#999">否</span>';
+  return `
+    <tr>
+      <td><input type="checkbox" data-id="${r.id}" ${checked} onchange="toggleSelect(${r.id})"></td>
+      <td style="white-space:nowrap">${escapeHtml(r.review_id || r.id)}</td>
+      <td><div class="content-cell" title="${escapeHtml(r.content || '')}">${escapeHtml(truncate(r.content, 80))}</div></td>
+      <td>${tagPills(r.tags)}</td>
+      <td style="text-align:center">${uncertainStr}</td>
+      <td>${scoreBar(r.authenticity_score)}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>
+        <button class="btn" style="padding:3px 8px;font-size:12px" onclick="startEdit(${r.id})">编辑</button>
+        <button class="btn" style="padding:3px 8px;font-size:12px;color:#ff4d4f;border-color:#ff4d4f" onclick="deleteReview(${r.id})">删除</button>
+      </td>
+    </tr>
+  `;
+}
+
+function renderEditForm(r, containerId) {
+  const tags = editTagMap[r.id] || [];
+  const tagsHtml = tags.map((t, i) => `
+    <span class="edit-tag-pill">
+      ${escapeHtml([t.level1, t.level2, t.level3].filter(Boolean).join('/'))}${t.level4 ? '/' + escapeHtml(t.level4) : ''}
+      <span class="remove-tag" onclick="removeEditTag(${r.id}, ${i})">&times;</span>
+    </span>
+  `).join('');
+  const l1s = Object.keys(reviewPanelState.tagHierarchy).sort();
+  const l1Opts = '<option value="">选择一级</option>' + l1s.map(l => `<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
+  return `
+    <div style="padding:8px 4px">
+      <div style="font-weight:500;margin-bottom:8px;font-size:13px">编辑标签 — 评论 ${escapeHtml(r.review_id || r.id)}</div>
+      <div class="current-edit-tags" id="editTags-${r.id}">
+        ${tagsHtml || '<span style="color:#999;font-size:12px">暂无标签</span>'}
+      </div>
+      <div id="addTagForm-${r.id}" style="display:none;" class="inline-edit-form">
+        <div class="tag-form-row">
+          <select id="editL1-${r.id}" onchange="onEditL1Change(${r.id})">${l1Opts}</select>
+          <select id="editL2-${r.id}" onchange="onEditL2Change(${r.id})"><option value="">选择二级</option></select>
+          <select id="editL3-${r.id}" onchange="onEditL3Change(${r.id})"><option value="">选择三级</option></select>
+          <select id="editL4-${r.id}"><option value="">选择四级（可选）</option></select>
+          <input type="number" id="editConf-${r.id}" value="1.0" min="0" max="1" step="0.05" style="width:70px" placeholder="置信度">
+          <input type="text" id="editReason-${r.id}" value="人工确认" placeholder="原因" style="width:120px">
+          <button class="btn btn-primary" style="padding:4px 10px;font-size:12px" onclick="confirmAddTag(${r.id})">添加</button>
+        </div>
+      </div>
+      <button class="btn" style="padding:4px 10px;font-size:12px;margin-top:4px" onclick="toggleAddTagForm(${r.id})" id="btnToggleAdd-${r.id}">+ 添加标签</button>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button class="btn btn-primary" style="padding:4px 14px;font-size:12px" onclick="saveEditTags(${r.id})">保存</button>
+        <button class="btn" style="padding:4px 14px;font-size:12px" onclick="cancelEdit()">取消</button>
+      </div>
+    </div>
+  `;
+}
+
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function truncate(str, len) {
+  if (!str) return '';
+  return str.length > len ? str.slice(0, len) + '...' : str;
+}
+function tagPills(tags) {
+  if (!tags || !tags.length) return '<span style="color:#999;font-size:12px">—</span>';
+  return tags.map(t => {
+    const path = [t.level1, t.level2, t.level3].filter(Boolean).join('/');
+    return `<span class="tag-pill">${escapeHtml(path)}</span>`;
+  }).join('');
+}
+function scoreBar(score) {
+  const s = score == null ? 1.0 : parseFloat(score);
+  let color = 'score-high';
+  if (s < 0.5) color = 'score-low';
+  else if (s < 0.8) color = 'score-mid';
+  return `<div class="score-bar"><div class="score-bar-fill ${color}" style="width:${Math.round(Math.min(1, Math.max(0, s))*100)}%"></div></div><span style="font-size:12px">${s.toFixed(2)}</span>`;
+}
+function statusBadge(status) {
+  const map = {
+    normal: ['badge-normal', '正常'],
+    uncertain: ['badge-uncertain', '模糊'],
+    rejected: ['badge-rejected', '虚假'],
+    reviewed: ['badge-reviewed', '已审核'],
+    tagged: ['badge-normal', '已打标'],
+    pending: ['badge-normal', '待处理'],
+  };
+  const [cls, label] = map[status] || ['badge-normal', status || '未知'];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+// Inline edit interactions
+function startEdit(reviewId) {
+  reviewPanelState.editingId = reviewId;
+  const review = reviewPanelState.allReviews.find(r => r.id === reviewId);
+  editTagMap[reviewId] = (review.tags || []).map(t => ({...t}));
+  applyFiltersAndRender();
+}
+function cancelEdit() {
+  reviewPanelState.editingId = null;
+  applyFiltersAndRender();
+}
+function removeEditTag(reviewId, idx) {
+  if (!editTagMap[reviewId]) return;
+  editTagMap[reviewId].splice(idx, 1);
+  refreshEditTags(reviewId);
+}
+function refreshEditTags(reviewId) {
+  const container = document.getElementById(`editTags-${reviewId}`);
+  if (!container) return;
+  const tags = editTagMap[reviewId] || [];
+  container.innerHTML = tags.map((t, i) => `
+    <span class="edit-tag-pill">
+      ${escapeHtml([t.level1, t.level2, t.level3].filter(Boolean).join('/'))}${t.level4 ? '/' + escapeHtml(t.level4) : ''}
+      <span class="remove-tag" onclick="removeEditTag(${reviewId}, ${i})">&times;</span>
+    </span>
+  `).join('') || '<span style="color:#999;font-size:12px">暂无标签</span>';
+}
+function toggleAddTagForm(reviewId) {
+  const form = document.getElementById(`addTagForm-${reviewId}`);
+  const btn = document.getElementById(`btnToggleAdd-${reviewId}`);
+  if (!form || !btn) return;
+  if (form.style.display === 'none') {
+    form.style.display = 'block';
+    btn.textContent = '− 收起';
+  } else {
+    form.style.display = 'none';
+    btn.textContent = '+ 添加标签';
+  }
+}
+function onEditL1Change(reviewId) {
+  const l1 = document.getElementById(`editL1-${reviewId}`).value;
+  const l2Sel = document.getElementById(`editL2-${reviewId}`);
+  const l3Sel = document.getElementById(`editL3-${reviewId}`);
+  const l4Sel = document.getElementById(`editL4-${reviewId}`);
+  if (!l2Sel || !l3Sel || !l4Sel) return;
+  l2Sel.innerHTML = '<option value="">选择二级</option>';
+  l3Sel.innerHTML = '<option value="">选择三级</option>';
+  l4Sel.innerHTML = '<option value="">选择四级（可选）</option>';
+  if (!l1 || !reviewPanelState.tagHierarchy[l1]) return;
+  Object.keys(reviewPanelState.tagHierarchy[l1]).sort().forEach(l2 => {
+    l2Sel.innerHTML += `<option value="${escapeHtml(l2)}">${escapeHtml(l2)}</option>`;
+  });
+}
+function onEditL2Change(reviewId) {
+  const l1 = document.getElementById(`editL1-${reviewId}`).value;
+  const l2 = document.getElementById(`editL2-${reviewId}`).value;
+  const l3Sel = document.getElementById(`editL3-${reviewId}`);
+  const l4Sel = document.getElementById(`editL4-${reviewId}`);
+  if (!l3Sel || !l4Sel) return;
+  l3Sel.innerHTML = '<option value="">选择三级</option>';
+  l4Sel.innerHTML = '<option value="">选择四级（可选）</option>';
+  if (!l1 || !l2 || !reviewPanelState.tagHierarchy[l1] || !reviewPanelState.tagHierarchy[l1][l2]) return;
+  Object.keys(reviewPanelState.tagHierarchy[l1][l2]).sort().forEach(l3 => {
+    l3Sel.innerHTML += `<option value="${escapeHtml(l3)}">${escapeHtml(l3)}</option>`;
+  });
+}
+function onEditL3Change(reviewId) {
+  const l1 = document.getElementById(`editL1-${reviewId}`).value;
+  const l2 = document.getElementById(`editL2-${reviewId}`).value;
+  const l3 = document.getElementById(`editL3-${reviewId}`).value;
+  const l4Sel = document.getElementById(`editL4-${reviewId}`);
+  if (!l4Sel) return;
+  l4Sel.innerHTML = '<option value="">选择四级（可选）</option>';
+  if (!l1 || !l2 || !l3) return;
+  const l4s = (reviewPanelState.tagHierarchy[l1][l2][l3] || []);
+  l4s.sort().forEach(l4 => {
+    if (l4) l4Sel.innerHTML += `<option value="${escapeHtml(l4)}">${escapeHtml(l4)}</option>`;
+  });
+}
+function confirmAddTag(reviewId) {
+  const l1El = document.getElementById(`editL1-${reviewId}`);
+  const l2El = document.getElementById(`editL2-${reviewId}`);
+  const l3El = document.getElementById(`editL3-${reviewId}`);
+  const l4El = document.getElementById(`editL4-${reviewId}`);
+  const confEl = document.getElementById(`editConf-${reviewId}`);
+  const reasonEl = document.getElementById(`editReason-${reviewId}`);
+  if (!l1El || !l2El || !l3El) return;
+  const l1 = l1El.value, l2 = l2El.value, l3 = l3El.value, l4 = l4El ? l4El.value : '';
+  const conf = parseFloat(confEl ? confEl.value : '1.0') || 1.0;
+  const reason = reasonEl ? reasonEl.value : '人工确认';
+  if (!l1 || !l2 || !l3) { toast('请选择完整的三级标签路径', 'err'); return; }
+  if (!editTagMap[reviewId]) editTagMap[reviewId] = [];
+  editTagMap[reviewId].push({ level1: l1, level2: l2, level3: l3, level4: l4, confidence: conf, reason });
+  refreshEditTags(reviewId);
+  l1El.value = ''; onEditL1Change(reviewId);
+  if (confEl) confEl.value = '1.0';
+  if (reasonEl) reasonEl.value = '人工确认';
+}
+async function saveEditTags(reviewId) {
+  const tags = (editTagMap[reviewId] || []).map(t => ({
+    level1: t.level1,
+    level2: t.level2,
+    level3: t.level3,
+    level4: t.level4 || '',
+    confidence: t.confidence == null ? 1.0 : parseFloat(t.confidence),
+    reason: t.reason || '人工确认',
+  }));
+  try {
+    const res = await fetch(`${API()}/api/tasks/${reviewPanelState.taskId}/reviews/${reviewId}/tags`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(tags),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || '保存失败');
+    const review = reviewPanelState.allReviews.find(r => r.id === reviewId);
+    if (review) {
+      review.tags = tags.map(t => ({...t, is_manual: true}));
+      review.status = 'reviewed';
+    }
+    reviewPanelState.editingId = null;
+    delete editTagMap[reviewId];
+    applyFiltersAndRender();
+    toast('标签已保存', 'ok');
+  } catch(e) {
+    toast('保存失败: ' + e.message, 'err');
+  }
+}
+
+// Delete / reject review (frontend only)
+function deleteReview(reviewId) {
+  const review = reviewPanelState.allReviews.find(r => r.id === reviewId);
+  if (review) {
+    review.status = 'rejected';
+    applyFiltersAndRender();
+    toast('已标记为虚假评论', 'ok');
+  }
+}
+
+// Batch operations
+function toggleSelect(reviewId) {
+  if (reviewPanelState.selectedIds.has(reviewId)) {
+    reviewPanelState.selectedIds.delete(reviewId);
+  } else {
+    reviewPanelState.selectedIds.add(reviewId);
+  }
+  updateBatchBars();
+  // Refresh checkbox states without full re-render
+  document.querySelectorAll('.review-table tbody input[type="checkbox"]').forEach(cb => {
+    const id = parseInt(cb.getAttribute('data-id') || '0');
+    if (id) cb.checked = reviewPanelState.selectedIds.has(id);
+  });
+}
+function toggleSelectAll(containerId) {
+  const checked = $(`#selectAll-${containerId}`).checked;
+  const rows = reviewPanelState.reviews || [];
+  rows.forEach(r => {
+    if (checked) reviewPanelState.selectedIds.add(r.id);
+    else reviewPanelState.selectedIds.delete(r.id);
+  });
+  updateBatchBars();
+  renderReviewTable(rows);
+}
+function updateBatchBars() {
+  ['step4ReviewContainer', 'auditReviewContainer'].forEach(cid => {
+    const bar = $(`#batchBar-${cid}`);
+    const countEl = $(`#batchCount-${cid}`);
+    if (!bar || !countEl) return;
+    const count = reviewPanelState.selectedIds.size;
+    if (count > 0) {
+      bar.style.display = 'flex';
+      countEl.textContent = `已选 ${count} 条`;
+    } else {
+      bar.style.display = 'none';
+    }
+  });
+}
+function batchMarkReviewed(containerId) {
+  reviewPanelState.selectedIds.forEach(id => {
+    const review = reviewPanelState.allReviews.find(r => r.id === id);
+    if (review) review.status = 'reviewed';
+  });
+  reviewPanelState.selectedIds.clear();
+  updateBatchBars();
+  applyFiltersAndRender();
+  toast('已批量标记为已审核', 'ok');
+}
+function batchDelete(containerId) {
+  reviewPanelState.selectedIds.forEach(id => {
+    const review = reviewPanelState.allReviews.find(r => r.id === id);
+    if (review) review.status = 'rejected';
+  });
+  reviewPanelState.selectedIds.clear();
+  updateBatchBars();
+  applyFiltersAndRender();
+  toast('已批量标记为虚假评论', 'ok');
+}
+function clearSelection(containerId) {
+  reviewPanelState.selectedIds.clear();
+  const selectAll = $(`#selectAll-${containerId}`);
+  if (selectAll) selectAll.checked = false;
+  updateBatchBars();
+  renderReviewTable(reviewPanelState.reviews || []);
+}
+
+// Pagination
+function renderPagination(totalPages) {
+  ['step4ReviewContainer', 'auditReviewContainer'].forEach(cid => {
+    const el = $(`#reviewPagination-${cid}`);
+    if (!el) return;
+    if (totalPages <= 1) { el.innerHTML = ''; return; }
+    let html = '';
+    html += `<button class="btn" ${reviewPanelState.page === 1 ? 'disabled' : ''} onclick="goToPage(${reviewPanelState.page - 1})">上一页</button>`;
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= reviewPanelState.page - 1 && i <= reviewPanelState.page + 1)) {
+        html += `<button class="btn ${i === reviewPanelState.page ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+      } else if (i === reviewPanelState.page - 2 || i === reviewPanelState.page + 2) {
+        html += `<span style="color:#999;font-size:12px">...</span>`;
+      }
+    }
+    html += `<button class="btn" ${reviewPanelState.page === totalPages ? 'disabled' : ''} onclick="goToPage(${reviewPanelState.page + 1})">下一页</button>`;
+    html += `<span class="page-info">第 ${reviewPanelState.page} / ${totalPages} 页</span>`;
+    el.innerHTML = html;
+  });
+}
+function goToPage(page) {
+  reviewPanelState.page = page;
+  applyFiltersAndRender();
+}
+
+// ====== Dashboard ======
+async function loadDashboard() {
+  const container = $('#dashboardTaskList');
+  container.innerHTML = '<p style="color:#888">加载中...</p>';
+  try {
+    const res = await fetch(API() + '/api/tasks');
+    if (!res.ok) throw new Error((await res.json()).detail);
+    const data = await res.json();
+    renderTaskList(data.tasks || []);
+  } catch(e) {
+    container.innerHTML = `<p style="color:#c62828">加载失败: ${e.message}</p>`;
+  }
+}
+
+function renderTaskList(tasks) {
+  const container = $('#dashboardTaskList');
+  if (!tasks.length) {
+    container.innerHTML = '<p style="color:#888;padding:20px;text-align:center">暂无任务</p>';
+    $('#dashboardTaskDetail').style.display = 'none';
+    return;
+  }
+  let html = '<div style="overflow:auto;border:1px solid #eee;border-radius:6px"><table class="preview-table"><thead><tr>';
+  html += '<th>任务ID</th><th>状态</th><th>评论数</th><th>已打标</th><th>模糊</th><th>虚假</th><th>创建时间</th><th>操作</th>';
+  html += '</tr></thead><tbody>';
+  tasks.forEach(t => {
+    const statusColor = { pending: '#888', running: '#1890ff', completed: '#52c41a', failed: '#ff4d4f' }[t.status] || '#888';
+    html += `<tr style="cursor:pointer" onclick="showTaskDetail('${t.id}')">`;
+    html += `<td><code>${t.id}</code></td>`;
+    html += `<td><span style="display:inline-block;padding:2px 8px;border-radius:4px;background:${statusColor};color:#fff;font-size:12px">${t.status}</span></td>`;
+    html += `<td>${t.total_reviews || 0}</td>`;
+    html += `<td>${t.tagged_reviews || 0}</td>`;
+    html += `<td style="color:${(t.uncertain_count||0)>0?'#ff9800':'#888'}">${t.uncertain_count || 0}</td>`;
+    html += `<td style="color:${(t.rejected_count||0)>0?'#ff4d4f':'#888'}">${t.rejected_count || 0}</td>`;
+    html += `<td style="color:#888;font-size:12px">${t.created_at ? t.created_at.slice(0,19).replace('T',' ') : '-'}</td>`;
+    html += `<td><button class="btn" style="padding:4px 10px;font-size:12px" onclick="event.stopPropagation();enterAuditFromDashboard('${t.id}')">审核</button></td>`;
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+async function showTaskDetail(taskId) {
+  const detail = $('#dashboardTaskDetail');
+  detail.style.display = 'block';
+  detail.innerHTML = '<p style="color:#888">加载统计中...</p>';
+  try {
+    const res = await fetch(API() + '/api/tasks/' + taskId + '/stats');
+    if (!res.ok) throw new Error((await res.json()).detail);
+    const stats = await res.json();
+    renderTaskDetail(taskId, stats);
+  } catch(e) {
+    detail.innerHTML = `<p style="color:#c62828">加载统计失败: ${e.message}</p>`;
+  }
+}
+
+function renderTaskDetail(taskId, stats) {
+  const detail = $('#dashboardTaskDetail');
+  const total = stats.total_reviews || 0;
+  const tagged = stats.tagged_reviews || 0;
+  const uncertain = stats.uncertain_reviews || [];
+  const rejected = stats.rejected_reviews || [];
+  const tagDist = stats.tag_distribution || {};
+
+  let html = '<div class="step" style="padding:20px">';
+  html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px">';
+
+  // 统计卡片
+  const cards = [
+    { label: '总评论数', value: total, color: '#1890ff' },
+    { label: '已打标', value: tagged, color: '#52c41a' },
+    { label: '未打标', value: total - tagged, color: '#888' },
+    { label: '模糊', value: uncertain.length, color: '#ff9800' },
+    { label: '虚假', value: rejected.length, color: '#ff4d4f' },
+  ];
+  cards.forEach(c => {
+    html += `<div style="flex:1;min-width:120px;background:${c.color}08;border:1px solid ${c.color}30;border-radius:8px;padding:14px;text-align:center">`;
+    html += `<div style="font-size:24px;font-weight:700;color:${c.color}">${c.value}</div>`;
+    html += `<div style="font-size:12px;color:#666;margin-top:4px">${c.label}</div>`;
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // 标签分布
+  if (Object.keys(tagDist).length > 0) {
+    html += '<div style="margin-bottom:20px"><strong style="font-size:14px">标签分布（点击标签查看明细并校对）</strong>';
+    const maxVal = Math.max(...Object.values(tagDist));
+    Object.entries(tagDist).forEach(([label, count]) => {
+      const pct = maxVal > 0 ? Math.round(count / maxVal * 100) : 0;
+      html += `<div style="display:flex;align-items:center;gap:10px;margin-top:8px;cursor:pointer" onclick="openTagDetailModal('${taskId}', '${escapeHtml(label)}')" title="点击查看「${escapeHtml(label)}」的评论明细">`;
+      html += `<div style="width:100px;font-size:13px;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">${escapeHtml(label)}</div>`;
+      html += `<div style="flex:1;background:#e8e8e8;border-radius:4px;height:20px;overflow:hidden">`;
+      html += `<div style="width:${pct}%;background:#1890ff;height:100%;border-radius:4px;transition:width 0.3s"></div>`;
+      html += `</div><div style="width:50px;text-align:right;font-size:13px;color:#666">${count}</div>`;
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // 不确定评论
+  if (uncertain.length > 0) {
+    html += '<div style="margin-bottom:16px"><strong style="font-size:14px">模糊评论 (' + uncertain.length + ')</strong>';
+    html += '<div style="margin-top:8px">';
+    uncertain.slice(0, 5).forEach(u => {
+      html += `<div style="padding:8px 10px;background:#fff3e0;border-radius:6px;margin-bottom:6px;font-size:13px">`;
+      html += `<span style="color:#888;font-size:12px">[${u.review_id || u.id}]</span> `;
+      html += `<span>${(u.content || '').substring(0, 60)}${(u.content || '').length > 60 ? '...' : ''}</span>`;
+      html += `<span style="float:right;color:#ff9800;font-size:12px">真实性: ${u.authenticity_score != null ? u.authenticity_score.toFixed(2) : '-'}</span>`;
+      html += '</div>';
+    });
+    if (uncertain.length > 5) {
+      html += `<div style="text-align:center;padding:6px"><button class="btn" style="font-size:12px;padding:4px 12px" onclick="enterAuditFromDashboard('${taskId}')">查看全部 ${uncertain.length} 条 →</button></div>`;
+    }
+    html += '</div></div>';
+  }
+
+  // 虚假评论
+  if (rejected.length > 0) {
+    html += '<div><strong style="font-size:14px">虚假评论 (' + rejected.length + ')</strong>';
+    html += '<div style="margin-top:8px">';
+    rejected.slice(0, 5).forEach(r => {
+      html += `<div style="padding:8px 10px;background:#ffebee;border-radius:6px;margin-bottom:6px;font-size:13px">`;
+      html += `<span style="color:#888;font-size:12px">[${r.review_id || r.id}]</span> `;
+      html += `<span>${(r.content || '').substring(0, 60)}${(r.content || '').length > 60 ? '...' : ''}</span>`;
+      html += `<span style="float:right;color:#ff4d4f;font-size:12px">真实性: ${r.authenticity_score != null ? r.authenticity_score.toFixed(2) : '-'}</span>`;
+      html += '</div>';
+    });
+    if (rejected.length > 5) {
+      html += `<div style="text-align:center;padding:6px"><button class="btn" style="font-size:12px;padding:4px 12px" onclick="enterAuditFromDashboard('${taskId}')">查看全部 ${rejected.length} 条 →</button></div>`;
+    }
+    html += '</div></div>';
+  }
+
+  html += '</div>';
+  detail.innerHTML = html;
+}
+
+function enterAuditFromDashboard(taskId) {
+  $('#auditTaskId').value = taskId;
+  switchMode('audit');
+  loadAuditTask();
+}
+
+// Audit mode entry
+async function loadAuditTask() {
+  const taskId = $('#auditTaskId').value.trim();
+  if (!taskId) { toast('请输入任务ID', 'err'); return; }
+  initReviewPanel('auditReviewContainer');
+  await loadAllReviews(taskId);
+}
+
+// ====== API 配置管理 ======
+const API_CONFIG_KEY = 'review_tagger_api_configs';
+let apiConfigEditingId = null;
+
+function _encodeKey(key) {
+  if (!key) return '';
+  try { return btoa(key); } catch(e) { return key; }
+}
+function _decodeKey(encoded) {
+  if (!encoded) return '';
+  try { return atob(encoded); } catch(e) { return encoded; }
+}
+function _maskKey(key) {
+  if (!key || key.length < 8) return '******';
+  return key.slice(0, 3) + '****' + key.slice(-3);
+}
+function _loadApiConfigs() {
+  try {
+    const raw = localStorage.getItem(API_CONFIG_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+function _saveApiConfigs(list) {
+  localStorage.setItem(API_CONFIG_KEY, JSON.stringify(list));
+}
+
+function loadApiConfigSelect() {
+  const sel = $('#apiConfigSelect');
+  const configs = _loadApiConfigs();
+  let html = '<option value="">-- 手动填写 --</option>';
+  configs.forEach(c => {
+    html += `<option value="${c.id}">${escapeHtml(c.name)} (${c.provider}/${c.model})</option>`;
+  });
+  sel.innerHTML = html;
+}
+
+function applyApiConfig(id) {
+  if (!id) return;
+  const configs = _loadApiConfigs();
+  const cfg = configs.find(c => c.id === id);
+  if (!cfg) return;
+  $('#provider').value = cfg.provider || 'openai';
+  $('#model').value = cfg.model || '';
+  $('#apiKey').value = _decodeKey(cfg.apiKeyEncoded) || '';
+  $('#baseUrl').value = cfg.baseUrl || '';
+  toast('已加载配置: ' + cfg.name, 'ok');
+}
+
+function saveCurrentApiConfig() {
+  const name = prompt('给当前配置取个名字（如：公司 OpenAI）:');
+  if (!name || !name.trim()) return;
+  const provider = $('#provider').value;
+  const model = $('#model').value;
+  const apiKey = $('#apiKey').value.trim();
+  if (!apiKey) { toast('请先填写 API Key', 'err'); return; }
+  const configs = _loadApiConfigs();
+  configs.push({
+    id: 'cfg_' + Date.now(),
+    name: name.trim(),
+    provider,
+    model,
+    apiKeyEncoded: _encodeKey(apiKey),
+    baseUrl: $('#baseUrl').value.trim(),
+    createdAt: new Date().toISOString(),
+  });
+  _saveApiConfigs(configs);
+  loadApiConfigSelect();
+  toast('配置已保存', 'ok');
+}
+
+function openApiConfigManager() {
+  $('#apiConfigModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  renderApiConfigList();
+  resetApiConfigForm();
+}
+function closeApiConfigManager() {
+  $('#apiConfigModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+$('#apiConfigModal').addEventListener('click', (e) => {
+  if (e.target === $('#apiConfigModal')) closeApiConfigManager();
+});
+
+function renderApiConfigList() {
+  const container = $('#apiConfigList');
+  const configs = _loadApiConfigs();
+  if (!configs.length) {
+    container.innerHTML = '<p style="color:#888;text-align:center;padding:20px">暂无保存的配置</p>';
+    return;
+  }
+  let html = '<div style="overflow:auto;border:1px solid #eee;border-radius:6px"><table class="preview-table"><thead><tr><th>名称</th><th>提供商</th><th>模型</th><th>Key</th><th>操作</th></tr></thead><tbody>';
+  configs.forEach(c => {
+    html += `<tr>`;
+    html += `<td>${escapeHtml(c.name)}</td>`;
+    html += `<td>${c.provider}</td>`;
+    html += `<td>${escapeHtml(c.model)}</td>`;
+    html += `<td><code>${_maskKey(_decodeKey(c.apiKeyEncoded))}</code></td>`;
+    html += `<td>`;
+    html += `<button class="btn" style="padding:3px 8px;font-size:12px" onclick="editApiConfig('${c.id}')">编辑</button> `;
+    html += `<button class="btn" style="padding:3px 8px;font-size:12px;color:#ff4d4f;border-color:#ff4d4f" onclick="deleteApiConfig('${c.id}')">删除</button>`;
+    html += `</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+function editApiConfig(id) {
+  const configs = _loadApiConfigs();
+  const cfg = configs.find(c => c.id === id);
+  if (!cfg) return;
+  apiConfigEditingId = id;
+  $('#apiConfigFormTitle').textContent = '编辑配置';
+  $('#cfgName').value = cfg.name || '';
+  $('#cfgProvider').value = cfg.provider || 'openai';
+  $('#cfgModel').value = cfg.model || '';
+  $('#cfgBaseUrl').value = cfg.baseUrl || '';
+  $('#cfgApiKey').value = _decodeKey(cfg.apiKeyEncoded) || '';
+}
+
+function deleteApiConfig(id) {
+  if (!confirm('确定删除此配置？')) return;
+  let configs = _loadApiConfigs();
+  configs = configs.filter(c => c.id !== id);
+  _saveApiConfigs(configs);
+  renderApiConfigList();
+  loadApiConfigSelect();
+  toast('已删除', 'ok');
+}
+
+function submitApiConfig() {
+  const name = $('#cfgName').value.trim();
+  const provider = $('#cfgProvider').value;
+  const model = $('#cfgModel').value.trim();
+  const baseUrl = $('#cfgBaseUrl').value.trim();
+  const apiKey = $('#cfgApiKey').value.trim();
+  if (!name) { toast('请填写配置名称', 'err'); return; }
+  if (!apiKey) { toast('请填写 API Key', 'err'); return; }
+
+  const configs = _loadApiConfigs();
+  if (apiConfigEditingId) {
+    const idx = configs.findIndex(c => c.id === apiConfigEditingId);
+    if (idx >= 0) {
+      configs[idx] = { ...configs[idx], name, provider, model, baseUrl, apiKeyEncoded: _encodeKey(apiKey) };
+    }
+  } else {
+    configs.push({
+      id: 'cfg_' + Date.now(),
+      name, provider, model, baseUrl,
+      apiKeyEncoded: _encodeKey(apiKey),
+      createdAt: new Date().toISOString(),
+    });
+  }
+  _saveApiConfigs(configs);
+  renderApiConfigList();
+  loadApiConfigSelect();
+  resetApiConfigForm();
+  toast(apiConfigEditingId ? '配置已更新' : '配置已保存', 'ok');
+}
+
+function resetApiConfigForm() {
+  apiConfigEditingId = null;
+  $('#apiConfigFormTitle').textContent = '新增配置';
+  $('#cfgName').value = '';
+  $('#cfgProvider').value = 'openai';
+  $('#cfgModel').value = '';
+  $('#cfgBaseUrl').value = '';
+  $('#cfgApiKey').value = '';
+}
+
+// ====== 标签编辑器弹层 ======
+async function openTagEditor() {
+  const modal = $('#tagEditorModal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  // ESC 关闭
+  const escHandler = (e) => { if (e.key === 'Escape') { closeTagEditor(); document.removeEventListener('keydown', escHandler); } };
+  document.addEventListener('keydown', escHandler);
+
+  // 准备要发送给标签编辑器的 CSV 内容
+  const iframe = $('#tagEditorFrame');
+  let csvContent = null;
+  if (generatedTagCsv) {
+    csvContent = generatedTagCsv;
+  } else if (tagFile && tagFile.csvContent) {
+    csvContent = tagFile.csvContent;
+  } else if (tagFile) {
+    try {
+      const resp = await fetch(API() + '/api/download-file?file_id=' + encodeURIComponent(tagFile.file_id));
+      if (resp.ok) csvContent = await resp.text();
+    } catch(e) { console.log('获取标签文件内容失败', e); }
+  }
+
+  // 强制重新加载 iframe，确保每次打开都是全新状态
+  // 有 CSV 数据 → 加载完成后通过 postMessage 发送
+  // 无 CSV 数据 → 编辑器从0开始空白画布
+  if (csvContent) {
+    iframe.onload = () => {
+      iframe.contentWindow.postMessage({ type: 'load-csv', csv: csvContent }, '*');
+    };
+  } else {
+    iframe.onload = null;
+  }
+  iframe.src = 'app_tag_config.html?v=2&t=' + Date.now();
+}
+function closeTagEditor() {
+  const modal = $('#tagEditorModal');
+  modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+// 点击背景关闭
+$('#tagEditorModal').addEventListener('click', (e) => {
+  if (e.target === $('#tagEditorModal')) closeTagEditor();
+});
+
+// 接收编辑器返回的 CSV
+let editorReturnedCsv = null;
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'save-csv') {
+    editorReturnedCsv = e.data.csv;
+    closeTagEditor();
+    showEditorReturnModal();
+  }
+});
+
+function showEditorReturnModal() {
+  $('#editorReturnModal').style.display = 'flex';
+}
+function closeEditorReturnModal() {
+  $('#editorReturnModal').style.display = 'none';
+  editorReturnedCsv = null;
+}
+$('#editorReturnModal').addEventListener('click', (e) => {
+  if (e.target === $('#editorReturnModal')) closeEditorReturnModal();
+});
+
+function useEditorCsvForTask() {
+  if (!editorReturnedCsv) return;
+  const blob = new Blob(['\uFEFF' + editorReturnedCsv], { type: 'text/csv' });
+  const file = new File([blob], 'edited_tags.csv', { type: 'text/csv' });
+  const formData = new FormData();
+  formData.append('file', file);
+  fetch(API() + '/api/upload', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(data => {
+      tagFile = data;
+      tagFile.csvContent = editorReturnedCsv;
+      $('#tagDropzone').style.display = 'none';
+      const info = $('#tagFileInfo');
+      info.style.display = 'block';
+      info.innerHTML = `<div class="file-info"><span>📎 ${data.filename}</span><span style="color:#888">(${data.row_count} 行)</span><span class="remove" title="移除">&times;</span></div>`;
+      info.querySelector('.remove').onclick = () => {
+        tagFile = null;
+        info.style.display = 'none';
+        $('#tagDropzone').style.display = 'block';
+      };
+      clearSelectedTagSystem();
+      closeEditorReturnModal();
+      toast('已应用编辑后的标签体系', 'ok');
+    })
+    .catch(err => toast('上传失败: ' + err.message, 'err'));
+}
+
+async function saveEditorCsvToLibrary() {
+  if (!editorReturnedCsv) return;
+  const name = prompt('请输入标签体系名称:', '自定义标签体系');
+  if (!name) return;
+  try {
+    const res = await fetch(API() + '/api/tag-systems', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, csv_content: editorReturnedCsv }),
+    });
+    if (!res.ok) throw new Error('保存失败');
+    const data = await res.json();
+    selectTagSystem(data);
+    closeEditorReturnModal();
+    toast('已保存到标签库', 'ok');
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+}
+
+// ====== 初始化 ======
+$('#apiStatus').addEventListener('click', checkApi);
+checkApi();
+loadPresetTags();
+loadApiConfigSelect();
+
+// API 配置选择
+$('#apiConfigSelect').addEventListener('change', () => {
+  applyApiConfig($('#apiConfigSelect').value);
+});
+
+// provider 变化时自动切换默认模型
+$('#provider').addEventListener('change', () => {
+  const map = { openai: 'gpt-4o-mini', deepseek: 'deepseek-chat', dashscope: 'qwen-turbo' };
+  const def = map[$('#provider').value];
+  if (def) $('#model').value = def;
+});
+
+// ====== 标签明细弹窗（任务看板点击标签） ======
+let tagDetailState = {
+  taskId: null,
+  level1: null,
+  reviews: [],
+  page: 1,
+  pageSize: 15,
+  editingId: null,
+};
+
+async function openTagDetailModal(taskId, level1) {
+  tagDetailState.taskId = taskId;
+  tagDetailState.level1 = level1;
+  tagDetailState.page = 1;
+  tagDetailState.editingId = null;
+  $('#tagDetailTitle').textContent = level1;
+  $('#tagDetailModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  await loadTagDetailReviews();
+}
+
+function closeTagDetailModal() {
+  $('#tagDetailModal').style.display = 'none';
+  document.body.style.overflow = '';
+  tagDetailState.editingId = null;
+}
+$('#tagDetailModal').addEventListener('click', (e) => {
+  if (e.target === $('#tagDetailModal')) closeTagDetailModal();
+});
+
+async function loadTagDetailReviews() {
+  const { taskId, level1, page, pageSize } = tagDetailState;
+  try {
+    const url = `${API()}/api/tasks/${taskId}/reviews?page=${page}&page_size=${pageSize}&level1=${encodeURIComponent(level1)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error((await res.json()).detail || '加载失败');
+    const data = await res.json();
+    tagDetailState.reviews = data.reviews || [];
+    renderTagDetailReviews(data.total || 0);
+  } catch(e) {
+    toast('加载标签明细失败: ' + e.message, 'err');
+  }
+}
+
+function renderTagDetailReviews(total) {
+  const tbody = $('#tagDetailTableBody');
+  const reviews = tagDetailState.reviews;
+  if (!reviews.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;padding:20px">暂无评论</td></tr>';
+    $('#tagDetailPagination').innerHTML = '';
+    $('#tagDetailInfo').textContent = '';
+    return;
+  }
+
+  $('#tagDetailInfo').textContent = `共 ${total} 条评论，当前第 ${tagDetailState.page} 页`;
+
+  tbody.innerHTML = reviews.map(r => {
+    const isEditing = tagDetailState.editingId === r.id;
+    if (isEditing) {
+      return `<tr><td colspan="5">${renderTagDetailEditForm(r)}</td></tr>`;
+    }
+    const tags = (r.tags || []).filter(t => t.level1 === tagDetailState.level1);
+    const tagStr = tags.length
+      ? tags.map(t => `<span class="tag-pill">${escapeHtml([t.level1, t.level2, t.level3].filter(Boolean).join('/'))}</span>`).join('')
+      : '<span style="color:#999;font-size:12px">—</span>';
+    const status = r.status || 'normal';
+    const badgeMap = {
+      normal: ['badge-normal', '正常'],
+      uncertain: ['badge-uncertain', '模糊'],
+      rejected: ['badge-rejected', '虚假'],
+      reviewed: ['badge-reviewed', '已审核'],
+    };
+    const [cls, label] = badgeMap[status] || ['badge-normal', status || '未知'];
+    return `
+      <tr>
+        <td style="white-space:nowrap;font-size:12px;color:#888">${escapeHtml(r.review_id || r.id)}</td>
+        <td><div class="content-cell" title="${escapeHtml(r.content || '')}">${escapeHtml((r.content || '').substring(0, 60))}${(r.content || '').length > 60 ? '...' : ''}</div></td>
+        <td>${tagStr}</td>
+        <td><span class="badge ${cls}">${label}</span></td>
+        <td>
+          <button class="btn" style="padding:3px 8px;font-size:12px" onclick="startTagDetailEdit(${r.id})">编辑</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // 分页
+  const totalPages = Math.max(1, Math.ceil(total / tagDetailState.pageSize));
+  let pgHtml = '';
+  if (totalPages > 1) {
+    pgHtml += `<button class="btn" ${tagDetailState.page === 1 ? 'disabled' : ''} onclick="goTagDetailPage(${tagDetailState.page - 1})">上一页</button>`;
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= tagDetailState.page - 1 && i <= tagDetailState.page + 1)) {
+        pgHtml += `<button class="btn ${i === tagDetailState.page ? 'active' : ''}" onclick="goTagDetailPage(${i})">${i}</button>`;
+      } else if (i === tagDetailState.page - 2 || i === tagDetailState.page + 2) {
+        pgHtml += `<span style="color:#999;font-size:12px">...</span>`;
+      }
+    }
+    pgHtml += `<button class="btn" ${tagDetailState.page === totalPages ? 'disabled' : ''} onclick="goTagDetailPage(${tagDetailState.page + 1})">下一页</button>`;
+    pgHtml += `<span class="page-info">第 ${tagDetailState.page} / ${totalPages} 页</span>`;
+  }
+  $('#tagDetailPagination').innerHTML = pgHtml;
+}
+
+function goTagDetailPage(page) {
+  tagDetailState.page = page;
+  tagDetailState.editingId = null;
+  loadTagDetailReviews();
+}
+
+function startTagDetailEdit(reviewId) {
+  tagDetailState.editingId = reviewId;
+  renderTagDetailReviews(tagDetailState.reviews.length); // 重新渲染以显示编辑表单
+}
+
+function renderTagDetailEditForm(r) {
+  const tags = (r.tags || []).filter(t => t.level1 === tagDetailState.level1);
+  const tagsHtml = tags.map((t, i) => `
+    <span class="edit-tag-pill">
+      ${escapeHtml([t.level1, t.level2, t.level3].filter(Boolean).join('/'))}${t.level4 ? '/' + escapeHtml(t.level4) : ''}
+      <span class="remove-tag" onclick="removeTagDetailTag(${r.id}, ${i})">&times;</span>
+    </span>
+  `).join('');
+
+  // 动态构建级联下拉框（从评论标签构建层级树）
+  const tree = buildHierarchyFromReviews(tagDetailState.reviews);
+  const l1 = tagDetailState.level1;
+  const l2s = tree[l1] ? Object.keys(tree[l1]).sort() : [];
+
+  return `
+    <div style="padding:10px 8px">
+      <div style="font-weight:500;margin-bottom:8px;font-size:13px">编辑标签 — 评论 ${escapeHtml(r.review_id || r.id)}</div>
+      <div class="current-edit-tags" id="tdEditTags-${r.id}">
+        ${tagsHtml || '<span style="color:#999;font-size:12px">暂无标签</span>'}
+      </div>
+      <div class="tag-form-row">
+        <select id="tdEditL2-${r.id}" onchange="onTdEditL2Change(${r.id})"><option value="">选择二级</option>${l2s.map(l2 => `<option value="${escapeHtml(l2)}">${escapeHtml(l2)}</option>`).join('')}</select>
+        <select id="tdEditL3-${r.id}" onchange="onTdEditL3Change(${r.id})"><option value="">选择三级</option></select>
+        <select id="tdEditL4-${r.id}"><option value="">选择四级（可选）</option></select>
+        <input type="number" id="tdEditConf-${r.id}" value="1.0" min="0" max="1" step="0.05" style="width:70px" placeholder="置信度">
+        <input type="text" id="tdEditReason-${r.id}" value="人工确认" placeholder="原因" style="width:100px">
+        <button class="btn btn-primary" style="padding:4px 10px;font-size:12px" onclick="confirmAddTagDetailTag(${r.id})">添加</button>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn btn-primary" style="padding:4px 14px;font-size:12px" onclick="saveTagDetailEdit(${r.id})">保存</button>
+        <button class="btn" style="padding:4px 14px;font-size:12px" onclick="cancelTagDetailEdit()">取消</button>
+      </div>
+    </div>
+  `;
+}
+
+let tagDetailEditMap = {};
+
+function removeTagDetailTag(reviewId, idx) {
+  if (!tagDetailEditMap[reviewId]) {
+    const review = tagDetailState.reviews.find(r => r.id === reviewId);
+    tagDetailEditMap[reviewId] = (review?.tags || []).filter(t => t.level1 === tagDetailState.level1).map(t => ({...t}));
+  }
+  tagDetailEditMap[reviewId].splice(idx, 1);
+  refreshTdEditTags(reviewId);
+}
+
+function refreshTdEditTags(reviewId) {
+  const container = document.getElementById(`tdEditTags-${reviewId}`);
+  if (!container) return;
+  const tags = tagDetailEditMap[reviewId] || [];
+  container.innerHTML = tags.map((t, i) => `
+    <span class="edit-tag-pill">
+      ${escapeHtml([t.level1, t.level2, t.level3].filter(Boolean).join('/'))}${t.level4 ? '/' + escapeHtml(t.level4) : ''}
+      <span class="remove-tag" onclick="removeTagDetailTag(${reviewId}, ${i})">&times;</span>
+    </span>
+  `).join('') || '<span style="color:#999;font-size:12px">暂无标签</span>';
+}
+
+function onTdEditL2Change(reviewId) {
+  const l2 = document.getElementById(`tdEditL2-${reviewId}`).value;
+  const l3Sel = document.getElementById(`tdEditL3-${reviewId}`);
+  const l4Sel = document.getElementById(`tdEditL4-${reviewId}`);
+  if (!l3Sel || !l4Sel) return;
+  l3Sel.innerHTML = '<option value="">选择三级</option>';
+  l4Sel.innerHTML = '<option value="">选择四级（可选）</option>';
+  const tree = buildHierarchyFromReviews(tagDetailState.reviews);
+  const l1 = tagDetailState.level1;
+  if (!l1 || !tree[l1] || !tree[l1][l2]) return;
+  Object.keys(tree[l1][l2]).sort().forEach(l3 => {
+    l3Sel.innerHTML += `<option value="${escapeHtml(l3)}">${escapeHtml(l3)}</option>`;
+  });
+}
+
+function onTdEditL3Change(reviewId) {
+  const l2 = document.getElementById(`tdEditL2-${reviewId}`).value;
+  const l3 = document.getElementById(`tdEditL3-${reviewId}`).value;
+  const l4Sel = document.getElementById(`tdEditL4-${reviewId}`);
+  if (!l4Sel) return;
+  l4Sel.innerHTML = '<option value="">选择四级（可选）</option>';
+  const tree = buildHierarchyFromReviews(tagDetailState.reviews);
+  const l1 = tagDetailState.level1;
+  if (!l1 || !l2 || !l3 || !tree[l1] || !tree[l1][l2] || !tree[l1][l2][l3]) return;
+  const l4s = tree[l1][l2][l3] || [];
+  l4s.sort().forEach(l4 => {
+    if (l4) l4Sel.innerHTML += `<option value="${escapeHtml(l4)}">${escapeHtml(l4)}</option>`;
+  });
+}
+
+function confirmAddTagDetailTag(reviewId) {
+  const l1 = tagDetailState.level1;
+  const l2El = document.getElementById(`tdEditL2-${reviewId}`);
+  const l3El = document.getElementById(`tdEditL3-${reviewId}`);
+  const l4El = document.getElementById(`tdEditL4-${reviewId}`);
+  const confEl = document.getElementById(`tdEditConf-${reviewId}`);
+  const reasonEl = document.getElementById(`tdEditReason-${reviewId}`);
+  if (!l2El || !l3El) return;
+  const l2 = l2El.value, l3 = l3El.value, l4 = l4El ? l4El.value : '';
+  if (!l2 || !l3) { toast('请选择完整的标签路径', 'err'); return; }
+  if (!tagDetailEditMap[reviewId]) {
+    const review = tagDetailState.reviews.find(r => r.id === reviewId);
+    tagDetailEditMap[reviewId] = (review?.tags || []).filter(t => t.level1 === l1).map(t => ({...t}));
+  }
+  tagDetailEditMap[reviewId].push({
+    level1: l1, level2: l2, level3: l3, level4: l4,
+    confidence: parseFloat(confEl ? confEl.value : '1.0') || 1.0,
+    reason: reasonEl ? reasonEl.value : '人工确认',
+  });
+  refreshTdEditTags(reviewId);
+  l2El.value = ''; onTdEditL2Change(reviewId);
+}
+
+async function saveTagDetailEdit(reviewId) {
+  const tags = (tagDetailEditMap[reviewId] || []).map(t => ({
+    level1: t.level1, level2: t.level2, level3: t.level3, level4: t.level4 || '',
+    confidence: t.confidence == null ? 1.0 : parseFloat(t.confidence),
+    reason: t.reason || '人工确认',
+  }));
+  try {
+    const res = await fetch(`${API()}/api/tasks/${tagDetailState.taskId}/reviews/${reviewId}/tags`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(tags),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || '保存失败');
+    // 更新本地数据
+    const review = tagDetailState.reviews.find(r => r.id === reviewId);
+    if (review) {
+      review.tags = review.tags.filter(t => t.level1 !== tagDetailState.level1);
+      review.tags.push(...tags.map(t => ({...t, is_manual: true})));
+      review.status = 'reviewed';
+    }
+    tagDetailState.editingId = null;
+    delete tagDetailEditMap[reviewId];
+    renderTagDetailReviews(tagDetailState.reviews.length);
+    toast('标签已保存', 'ok');
+  } catch(e) {
+    toast('保存失败: ' + e.message, 'err');
+  }
+}
+
+function cancelTagDetailEdit() {
+  tagDetailState.editingId = null;
+  renderTagDetailReviews(tagDetailState.reviews.length);
+}
+
+// URL hash 解析
+if (location.hash.startsWith('#audit=')) {
+  switchMode('audit');
+}
+
+// ====== 多维度标签映射 ======
+function setTagMode(mode) {
+  currentTagMode = mode;
+  $('#btnSingleMode').style.background = mode === 'single' ? '#1890ff' : '#fff';
+  $('#btnSingleMode').style.color = mode === 'single' ? '#fff' : '#333';
+  $('#btnSingleMode').style.borderColor = mode === 'single' ? '#1890ff' : '#ddd';
+  $('#btnMultiMode').style.background = mode === 'multi' ? '#1890ff' : '#fff';
+  $('#btnMultiMode').style.color = mode === 'multi' ? '#fff' : '#333';
+  $('#btnMultiMode').style.borderColor = mode === 'multi' ? '#1890ff' : '#ddd';
+  $('#singleTagMode').style.display = mode === 'single' ? 'block' : 'none';
+  $('#multiTagMode').style.display = mode === 'multi' ? 'block' : 'none';
+}
+
+// 标签方案上传
+function setupProfileDropzone() {
+  const drop = $('#profileDropzone'), input = $('#profileFileInput');
+  if (!drop) return;
+  drop.addEventListener('click', () => input.click());
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('dragover'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+  drop.addEventListener('drop', (e) => {
+    e.preventDefault(); drop.classList.remove('dragover');
+    Array.from(e.dataTransfer.files).forEach(f => uploadProfileFile(f));
+  });
+  input.addEventListener('change', () => {
+    Array.from(input.files).forEach(f => uploadProfileFile(f));
+    input.value = '';
+  });
+}
+
+async function uploadProfileFile(file) {
+  if (!file.name.match(/\.(csv|xlsx|xls)$/i)) { toast('仅支持 CSV / Excel 文件: ' + file.name, 'err'); return; }
+  const name = prompt('给这个标签方案取个名字（如：鞋子-购后）:', file.name.replace(/\.[^.]+$/, ''));
+  if (!name || !name.trim()) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('name', name.trim());
+  try {
+    const res = await fetch(API() + '/api/tag-profiles', { method: 'POST', body: fd });
+    if (!res.ok) throw new Error((await res.json()).detail || '上传失败');
+    const data = await res.json();
+    tagProfiles.push(data);
+    renderProfileList();
+    updateDefaultProfileOptions();
+    toast(`方案「${data.name}」上传成功`, 'ok');
+  } catch(e) {
+    toast('上传失败: ' + e.message, 'err');
+  }
+}
+
+function renderProfileList() {
+  const container = $('#profileList');
+  if (!tagProfiles.length) { container.innerHTML = '<span style="color:#888;font-size:13px">暂无方案，请上传标签体系文件</span>'; return; }
+  container.innerHTML = tagProfiles.map((p, idx) => `
+    <div class="profile-card">
+      <span class="profile-name">${escapeHtml(p.name)}</span>
+      <span style="color:#888">${p.row_count} 行 / ${p.columns.length} 列</span>
+      <span class="profile-desc">ID: ${escapeHtml(p.profile_id)}</span>
+      <span class="remove" onclick="removeProfile(${idx})" title="移除">&times;</span>
+    </div>
+  `).join('');
+}
+
+function removeProfile(idx) {
+  tagProfiles.splice(idx, 1);
+  renderProfileList();
+  updateDefaultProfileOptions();
+  // 清理引用该方案的规则
+  mappingRules = mappingRules.filter(r => tagProfiles.some(p => p.profile_id === r.profile_id));
+  renderMappingRules();
+}
+
+function updateDefaultProfileOptions() {
+  const sel = $('#defaultProfileSelect');
+  let html = '<option value="">-- 请选择默认方案（无规则匹配时使用）--</option>';
+  tagProfiles.forEach(p => {
+    html += `<option value="${escapeHtml(p.profile_id)}">${escapeHtml(p.name)}</option>`;
+  });
+  sel.innerHTML = html;
+}
+
+// 映射规则
+function addMappingRule() {
+  if (!tagProfiles.length) { toast('请先上传至少一个标签方案', 'err'); return; }
+  if (!reviewFile) { toast('请先上传评论文件，以便选择条件列', 'err'); return; }
+  const ruleId = 'rule_' + Date.now();
+  mappingRules.push({
+    id: ruleId,
+    name: '',
+    conditions: [{ column: reviewFile.columns[0] || '', op: '==', value: '' }],
+    profile_id: tagProfiles[0].profile_id,
+    priority: mappingRules.length,
+  });
+  renderMappingRules();
+}
+
+function removeMappingRule(ruleId) {
+  mappingRules = mappingRules.filter(r => r.id !== ruleId);
+  renderMappingRules();
+}
+
+function updateRuleCondition(ruleId, condIdx, field, value) {
+  const rule = mappingRules.find(r => r.id === ruleId);
+  if (!rule) return;
+  if (field === 'profile_id') {
+    rule.profile_id = value;
+  } else {
+    rule.conditions[condIdx][field] = value;
+  }
+}
+
+function addConditionToRule(ruleId) {
+  const rule = mappingRules.find(r => r.id === ruleId);
+  if (!rule) return;
+  rule.conditions.push({ column: reviewFile.columns[0] || '', op: '==', value: '' });
+  renderMappingRules();
+}
+
+function removeConditionFromRule(ruleId, condIdx) {
+  const rule = mappingRules.find(r => r.id === ruleId);
+  if (!rule || rule.conditions.length <= 1) return;
+  rule.conditions.splice(condIdx, 1);
+  renderMappingRules();
+}
+
+function renderMappingRules() {
+  const container = $('#mappingRulesContainer');
+  if (!mappingRules.length) { container.innerHTML = '<span style="color:#888;font-size:13px">暂无规则，点击上方按钮添加</span>'; return; }
+
+  const colOpts = reviewFile ? reviewFile.columns.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('') : '';
+  const opOpts = ['==', '!=', 'contains', 'in', 'starts_with', 'ends_with', 'regex'].map(o => `<option value="${o}">${o}</option>`).join('');
+  const profileOpts = tagProfiles.map(p => `<option value="${escapeHtml(p.profile_id)}">${escapeHtml(p.name)}</option>`).join('');
+
+  container.innerHTML = mappingRules.map((rule, ri) => `
+    <div class="mapping-rule">
+      <span class="rule-num">${ri + 1}</span>
+      <div style="display:flex;flex-direction:column;gap:6px;flex:1">
+        ${rule.conditions.map((cond, ci) => `
+          <div class="condition-row">
+            <span style="font-size:12px;color:#888">当</span>
+            <select onchange="updateRuleCondition('${rule.id}', ${ci}, 'column', this.value)">${colOpts.replace(`value="${cond.column}"`, `value="${cond.column}" selected`)}</select>
+            <select onchange="updateRuleCondition('${rule.id}', ${ci}, 'op', this.value)">${opOpts.replace(`value="${cond.op}"`, `value="${cond.op}" selected`)}</select>
+            <input type="text" placeholder="匹配值" value="${escapeHtml(cond.value)}" onchange="updateRuleCondition('${rule.id}', ${ci}, 'value', this.value)" style="width:140px">
+            ${rule.conditions.length > 1 ? `<span style="color:#ff4d4f;cursor:pointer;font-size:16px" onclick="removeConditionFromRule('${rule.id}', ${ci})" title="删除条件">&times;</span>` : ''}
+            ${ci === rule.conditions.length - 1 ? `<button class="btn" style="padding:2px 8px;font-size:12px" onclick="addConditionToRule('${rule.id}')">+ 且</button>` : '<span style="font-size:12px;color:#888">且</span>'}
+          </div>
+        `).join('')}
+        <div class="condition-row">
+          <span style="font-size:12px;color:#888">则使用方案</span>
+          <select onchange="updateRuleCondition('${rule.id}', 0, 'profile_id', this.value)">${profileOpts.replace(`value="${rule.profile_id}"`, `value="${rule.profile_id}" selected`)}</select>
+        </div>
+      </div>
+      <span class="remove-rule" onclick="removeMappingRule('${rule.id}')" title="删除规则">&times;</span>
+    </div>
+  `).join('');
+}
+
+function buildMappingConfig() {
+  return {
+    profiles: tagProfiles.map(p => ({
+      id: p.profile_id,
+      name: p.name,
+      description: '',
+      file_path: p.file_path,
+    })),
+    rules: mappingRules.map(r => ({
+      id: r.id,
+      name: r.name,
+      conditions: r.conditions,
+      profile_id: r.profile_id,
+      priority: r.priority,
+    })),
+    default_profile_id: $('#defaultProfileSelect').value || null,
+  };
+}
+
+async function previewMapping() {
+  if (!reviewFile) { toast('请先上传评论文件', 'err'); return; }
+  if (!tagProfiles.length) { toast('请先上传标签方案', 'err'); return; }
+
+  const config = buildMappingConfig();
+  try {
+    // 保存配置获取 key
+    const configRes = await fetch(API() + '/api/tag-mapping-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    if (!configRes.ok) throw new Error((await configRes.json()).detail || '保存配置失败');
+    const configData = await configRes.json();
+    currentMappingConfigKey = configData.config_key;
+
+    const fd = new FormData();
+    fd.append('review_file_id', reviewFile.file_id);
+    fd.append('config_key', configData.config_key);
+    const res = await fetch(API() + '/api/tag-mapping-preview', { method: 'POST', body: fd });
+    if (!res.ok) throw new Error((await res.json()).detail || '预览失败');
+    const data = await res.json();
+
+    $('#mappingPreviewWrap').style.display = 'block';
+    const cols = ['matched_profile_name'].concat(reviewFile.columns || []);
+    const rows = data.preview.map(r => {
+      const row = { matched_profile_name: r.matched_profile_name || '(未匹配)' };
+      Object.entries(r.row_data || {}).forEach(([k, v]) => { row[k] = v; });
+      return row;
+    });
+    renderTable($('#mappingPreviewTable'), rows, cols);
+    toast('映射预览已生成', 'ok');
+  } catch(e) {
+    toast('预览失败: ' + e.message, 'err');
+  }
+}
+
+// 初始化多维度映射
+setupProfileDropzone();
+
+// ====== 场景识别与标签自动生成 ======
+
+let detectedScene = null;  // 缓存识别结果
+let generatedTagCsv = null; // 缓存生成的标签 CSV
+
+async function detectScene() {
+  if (!reviewFile) { toast('请先上传评论文件', 'err'); return; }
+  const btn = $('#btnDetectScene');
+  const txt = $('#detectSceneText');
+  const resultDiv = $('#sceneDetectResult');
+  btn.disabled = true;
+  txt.textContent = '⏳ 识别中...';
+  resultDiv.style.display = 'none';
+
+  try {
+    const fd = new FormData();
+    fd.append('review_file_id', reviewFile.file_id);
+    fd.append('content_column', $('#contentColumn').value || '评论内容');
+    fd.append('sample_size', '20');
+
+    const res = await fetch(API() + '/api/detect-scene', { method: 'POST', body: fd });
+    if (!res.ok) throw new Error((await res.json()).detail || '识别失败');
+    const data = await res.json();
+    detectedScene = data;
+
+    openSceneModal(data);
+  } catch (e) {
+    toast('场景识别失败: ' + e.message, 'err');
+    txt.textContent = '🎯 自动识别场景';
+    btn.disabled = false;
+  }
+}
+
+function openSceneModal(data) {
+  const modal = document.createElement('div');
+  modal.id = 'sceneModal';
+  modal.className = 'modal';
+  modal.style.display = 'flex';
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width:520px">
+      <div class="modal-header">
+        <div style="font-size:16px;font-weight:600">🎯 场景识别结果</div>
+        <button class="close-btn" onclick="closeSceneModal()">&times;</button>
+      </div>
+      <div style="padding:20px">
+        <div style="background:#f5f5f5;border-radius:8px;padding:14px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span style="font-size:28px">🔍</span>
+            <div>
+              <div style="font-size:16px;font-weight:600;color:#333">${data.display_name}</div>
+              <div style="font-size:12px;color:#666;margin-top:2px">置信度: ${(data.confidence * 100).toFixed(0)}% ${data.is_fallback ? '(keyword兜底)' : ''}</div>
+            </div>
+          </div>
+          <div style="font-size:13px;color:#555;line-height:1.5">${data.description}</div>
+          ${data.keywords && data.keywords.length ? `<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">${data.keywords.map(k => `<span style="background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:12px;font-size:12px">${k}</span>`).join('')}</div>` : ''}
+        </div>
+        <label style="font-size:13px;font-weight:500;color:#444;display:block;margin-bottom:8px">或手动选择场景：</label>
+        <select id="sceneSelect" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:16px">
+          ${allScenes.map(s => `<option value="${s.scene_type}" ${s.scene_type === data.scene_type ? 'selected' : ''}>${s.display_name}</option>`).join('')}
+        </select>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button class="btn" onclick="closeSceneModal()">取消</button>
+          <button class="btn btn-primary" onclick="confirmSceneAndGenerate()">✨ 生成标签体系</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function closeSceneModal() {
+  const m = $('#sceneModal');
+  if (m) m.remove();
+  $('#detectSceneText').textContent = '🎯 识别场景并生成';
+  $('#btnDetectScene').disabled = false;
+}
+
+async function confirmSceneAndGenerate() {
+  const sceneType = $('#sceneSelect').value;
+  const btn = document.querySelector('#sceneModal .btn-primary');
+  btn.disabled = true;
+  btn.textContent = '⏳ 生成中...';
+
+  try {
+    const res = await fetch(API() + '/api/generate-tags', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        scene_type: sceneType,
+        review_file_id: reviewFile.file_id,
+        content_column: $('#contentColumn').value || '评论内容',
+        use_template: true,
+      }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || '生成失败');
+    const data = await res.json();
+    generatedTagCsv = data.csv_content;
+
+    // 将 CSV 转为 File 对象，模拟上传
+    const blob = new Blob(['\uFEFF' + data.csv_content], { type: 'text/csv' });
+    const file = new File([blob], `auto_tags_${sceneType}.csv`, { type: 'text/csv' });
+
+    // 模拟 setupDropzone 的回调
+    const formData = new FormData();
+    formData.append('file', file);
+    const upRes = await fetch(API() + '/api/upload', { method: 'POST', body: formData });
+    if (!upRes.ok) throw new Error('上传生成的标签文件失败');
+    const upData = await upRes.json();
+
+    tagFile = upData;
+    // 同时提供保存到标签库的选项
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'btn';
+    saveBtn.style.cssText = 'margin-top:10px;background:#52c41a;color:#fff;border-color:#52c41a';
+    saveBtn.textContent = '💾 保存到标签库';
+    saveBtn.onclick = async () => {
+      const name = prompt('标签体系名称:', SceneType.display_name(scene) + ' 标签体系');
+      if (!name) return;
+      try {
+        const res = await fetch(API() + '/api/tag-systems', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, csv_content: data.csv_content, scene_type: data.scene_type }),
+        });
+        if (!res.ok) throw new Error('保存失败');
+        const ts = await res.json();
+        selectTagSystem(ts);
+        toast('已保存到标签库', 'ok');
+        saveBtn.remove();
+      } catch (e) { toast(e.message, 'err'); }
+    };
+
+    // 更新 UI
+    const info = $('#tagFileInfo');
+    info.style.display = 'block';
+    info.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:20px">✨</span>
+      <div>
+        <div style="font-weight:500">${upData.filename}</div>
+        <div style="font-size:12px;color:#666">${upData.row_count} 条标签路径 · ${data.level1_count} 个一级标签 · ${data.is_template ? '模板生成' : 'LLM生成'}</div>
+      </div>
+    </div>`;
+    $('#tagDropzone').style.display = 'none';
+
+    // 显示生成摘要
+    const resultDiv = $('#sceneDetectResult');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = `<span style="color:#2e7d32">✅ 已自动生成标签体系：</span>
+      <strong>${data.display_name}</strong>，
+      ${data.level1_count} 个一级标签，${data.tag_count} 条标签路径
+      ${data.is_template ? '（基于模板）' : '（LLM动态生成）'}`;
+
+    closeSceneModal();
+    toast(`标签体系生成完成: ${data.display_name}`, 'ok');
+  } catch (e) {
+    toast('标签生成失败: ' + e.message, 'err');
+    btn.disabled = false;
+    btn.textContent = '✨ 生成标签体系';
+  }
+}
+
+// 预加载场景列表
+let allScenes = [];
+async function loadScenes() {
+  try {
+    const res = await fetch(API() + '/api/scenes');
+    if (res.ok) {
+      const data = await res.json();
+      allScenes = data.scenes;
+    }
+  } catch (e) { console.log('加载场景列表失败', e); }
+}
+
+
+// ====== 标签库管理（一级页面） ======
+let allTagSystems = [];
+let libraryViewMode = 'grid'; // 'grid' | 'list'
+
+async function loadTagLibrary() {
+  try {
+    const res = await fetch(API() + '/api/tag-systems');
+    const data = await res.json();
+    allTagSystems = data.items || [];
+    populateLibrarySceneFilter();
+    renderTagLibrary();
+    updateLibraryStats();
+  } catch (e) {
+    console.log('加载标签库失败', e);
+  }
+}
+
+function updateLibraryStats() {
+  $('#libStatTotal').textContent = allTagSystems.length;
+  $('#libStatPreset').textContent = allTagSystems.filter(ts => ts.is_preset).length;
+  $('#libStatCustom').textContent = allTagSystems.filter(ts => !ts.is_preset).length;
+}
+
+function populateLibrarySceneFilter() {
+  const sel = $('#tagLibrarySceneFilter');
+  const scenes = new Set(allTagSystems.map(ts => ts.scene_type).filter(Boolean));
+  const cur = sel.value;
+  let html = '<option value="">所有场景</option>';
+  scenes.forEach(s => { html += `<option value="${s}">${s}</option>`; });
+  sel.innerHTML = html;
+  sel.value = cur;
+}
+
+function toggleLibraryView() {
+  libraryViewMode = libraryViewMode === 'grid' ? 'list' : 'grid';
+  $('#btnLibraryView').textContent = libraryViewMode === 'grid' ? '☰ 列表视图' : '⊞ 卡片视图';
+  renderTagLibrary();
+}
+
+function renderTagLibrary() {
+  const grid = $('#tagLibraryGrid');
+  const list = $('#tagLibraryList');
+  const empty = $('#tagLibraryEmpty');
+  const search = ($('#tagLibrarySearch').value || '').toLowerCase();
+  const scene = $('#tagLibrarySceneFilter').value;
+
+  let items = allTagSystems.filter(ts => {
+    if (search && !ts.name.toLowerCase().includes(search)) return false;
+    if (scene && ts.scene_type !== scene) return false;
+    return true;
+  });
+
+  if (items.length === 0) {
+    grid.style.display = 'none';
+    list.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+  grid.style.display = libraryViewMode === 'grid' ? 'grid' : 'none';
+  list.style.display = libraryViewMode === 'list' ? 'block' : 'none';
+  empty.style.display = 'none';
+
+  // Grid view
+  grid.innerHTML = items.map(ts => {
+    const rowCount = Math.max(0, (ts.csv_content || '').split('\n').filter(l => l.trim()).length - 1);
+    const sceneBadge = ts.scene_type ? `<span style="display:inline-block;padding:2px 8px;background:#e6f7ff;color:#1890ff;border-radius:4px;font-size:11px;margin-right:6px">${ts.scene_type}</span>` : '';
+    const presetBadge = ts.is_preset ? `<span style="display:inline-block;padding:2px 8px;background:#f6ffed;color:#52c41a;border-radius:4px;font-size:11px;margin-right:6px">预置</span>` : '';
+    return `<div style="border:1px solid #e8e8e8;border-radius:10px;padding:14px;background:#fff;transition:box-shadow .2s" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseleave="this.style.boxShadow='none'">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-weight:600;font-size:14px;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ts.name}</div>
+        <div style="display:flex;gap:4px;flex-shrink:0">${presetBadge}${sceneBadge}</div>
+      </div>
+      <div style="font-size:12px;color:#888;margin-bottom:10px">${rowCount} 条标签路径 · ${ts.created_at ? ts.created_at.slice(0,10) : ''}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-primary" style="padding:4px 10px;font-size:12px;flex:1" onclick="useTagSystemForTask('${ts.id}')">使用</button>
+        <button class="btn" style="padding:4px 10px;font-size:12px;flex:1" onclick="previewTagSystem('${ts.id}')">预览</button>
+        <button class="btn" style="padding:4px 10px;font-size:12px;flex:1" onclick="editTagSystem('${ts.id}')">编辑</button>
+        <button class="btn" style="padding:4px 10px;font-size:12px;flex:1" onclick="copyTagSystem('${ts.id}')">复制</button>
+        ${!ts.is_preset ? `<button class="btn" style="padding:4px 10px;font-size:12px;color:#ff4d4f;border-color:#ff4d4f;flex:1" onclick="deleteTagSystem('${ts.id}')">删除</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // List view
+  list.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="background:#f5f5f5">
+      <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e8e8e8">名称</th>
+      <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e8e8e8;width:100px">场景</th>
+      <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e8e8e8;width:80px">类型</th>
+      <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e8e8e8;width:100px">路径数</th>
+      <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e8e8e8;width:120px">创建时间</th>
+      <th style="padding:10px 12px;text-align:right;border-bottom:1px solid #e8e8e8;width:280px">操作</th>
+    </tr></thead>
+    <tbody>${items.map(ts => {
+      const rowCount = Math.max(0, (ts.csv_content || '').split('\n').filter(l => l.trim()).length - 1);
+      const typeBadge = ts.is_preset
+        ? '<span style="padding:2px 8px;background:#f6ffed;color:#52c41a;border-radius:4px;font-size:11px">预置</span>'
+        : '<span style="padding:2px 8px;background:#e6f7ff;color:#1890ff;border-radius:4px;font-size:11px">自定义</span>';
+      return `<tr style="border-bottom:1px solid #f0f0f0" onmouseenter="this.style.background='#fafafa'" onmouseleave="this.style.background=''">
+        <td style="padding:10px 12px;font-weight:500">${ts.name}</td>
+        <td style="padding:10px 12px;color:#666">${ts.scene_type || '-'}</td>
+        <td style="padding:10px 12px">${typeBadge}</td>
+        <td style="padding:10px 12px;color:#666">${rowCount}</td>
+        <td style="padding:10px 12px;color:#888;font-size:12px">${ts.created_at ? ts.created_at.slice(0,10) : '-'}</td>
+        <td style="padding:10px 12px;text-align:right">
+          <button class="btn btn-primary" style="padding:3px 10px;font-size:12px" onclick="useTagSystemForTask('${ts.id}')">使用</button>
+          <button class="btn" style="padding:3px 10px;font-size:12px" onclick="previewTagSystem('${ts.id}')">预览</button>
+          <button class="btn" style="padding:3px 10px;font-size:12px" onclick="editTagSystem('${ts.id}')">编辑</button>
+          <button class="btn" style="padding:3px 10px;font-size:12px" onclick="copyTagSystem('${ts.id}')">复制</button>
+          ${!ts.is_preset ? `<button class="btn" style="padding:3px 10px;font-size:12px;color:#ff4d4f;border-color:#ff4d4f" onclick="deleteTagSystem('${ts.id}')">删除</button>` : ''}
+        </td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+async function useTagSystemForTask(sid) {
+  const ts = allTagSystems.find(t => t.id === sid);
+  if (!ts) return;
+  selectTagSystem(ts);
+  switchMode('tag');
+  toast(`已选择「${ts.name}」，请继续配置打标参数`, 'ok');
+}
+
+function importTagSystemFromFile() {
+  $('#tagLibraryImportInput').click();
+}
+
+async function handleTagSystemImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const csv = e.target.result;
+    const name = file.name.replace(/\.csv$/i, '');
+    try {
+      const res = await fetch(API() + '/api/tag-systems', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, csv_content: csv }),
+      });
+      if (!res.ok) throw new Error('导入失败');
+      toast('导入成功', 'ok');
+      loadTagLibrary();
+    } catch (err) {
+      toast(err.message, 'err');
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+async function previewTagSystem(sid) {
+  const ts = allTagSystems.find(t => t.id === sid);
+  if (!ts) return;
+  // Parse CSV and build tree preview
+  const lines = (ts.csv_content || '').split('\n').filter(l => l.trim());
+  if (lines.length < 2) { toast('标签体系为空', 'err'); return; }
+  const headers = lines[0].split(',');
+  const rows = lines.slice(1).map(l => l.split(','));
+  // Build tree
+  const tree = {};
+  rows.forEach(cols => {
+    const l1 = (cols[0] || '').trim();
+    const l2 = (cols[1] || '').trim();
+    const l3 = (cols[2] || '').trim();
+    const l4 = (cols[3] || '').trim();
+    if (!l1) return;
+    if (!tree[l1]) tree[l1] = {};
+    if (l2 && !tree[l1][l2]) tree[l1][l2] = {};
+    if (l3 && l2 && !tree[l1][l2][l3]) tree[l1][l2][l3] = [];
+    if (l4 && l3 && l2 && !tree[l1][l2][l3].includes(l4)) tree[l1][l2][l3].push(l4);
+  });
+
+  let html = '<ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.8">';
+  Object.entries(tree).forEach(([l1, l2map]) => {
+    html += `<li><b>${l1}</b>`;
+    if (Object.keys(l2map).length) {
+      html += '<ul style="padding-left:16px">';
+      Object.entries(l2map).forEach(([l2, l3map]) => {
+        html += `<li>${l2}`;
+        if (Object.keys(l3map).length) {
+          html += '<ul style="padding-left:16px">';
+          Object.entries(l3map).forEach(([l3, l4arr]) => {
+            html += `<li>${l3}`;
+            if (l4arr.length) html += ' <span style="color:#888;font-size:12px">(' + l4arr.join(' / ') + ')</span>';
+            html += '</li>';
+          });
+          html += '</ul>';
+        }
+        html += '</li>';
+      });
+      html += '</ul>';
+    }
+    html += '</li>';
+  });
+  html += '</ul>';
+
+  const modal = document.createElement('div');
+  modal.style.cssText = 'display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1003;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:12px;width:100%;max-width:600px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #e0e0e0;background:#f0f2f5;flex-shrink:0;">
+        <div style="font-size:16px;font-weight:600;color:#333">🔍 标签体系预览 — ${ts.name}</div>
+        <button class="btn" onclick="this.closest('.modal-style').remove()" style="font-size:13px">✕</button>
+      </div>
+      <div style="padding:16px 20px;overflow:auto;flex:1;">${html}</div>
+      <div style="padding:12px 20px;border-top:1px solid #e8e8e8;text-align:right">
+        <button class="btn btn-primary" onclick="useTagSystemForTask('${sid}');this.closest('.modal-style').remove()">使用此标签体系</button>
+        <button class="btn" onclick="this.closest('.modal-style').remove()">关闭</button>
+      </div>
+    </div>`;
+  modal.className = 'modal-style';
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function selectTagSystem(ts) {
+  tagFile = { type: 'tag_system', tag_system_id: ts.id, name: ts.name, csvContent: ts.csv_content, filename: ts.name + '.csv' };
+  $('#tagDropzone').style.display = 'none';
+  $('#tagFileInfo').style.display = 'block';
+  $('#tagFileInfo').innerHTML = `<div class="file-info"><span>🏷️ ${ts.name}</span><span style="color:#888">(标签库)</span><span class="remove" title="移除">&times;</span></div>`;
+  $('#tagFileInfo').querySelector('.remove').onclick = () => {
+    tagFile = null;
+    $('#tagFileInfo').style.display = 'none';
+    $('#tagDropzone').style.display = 'block';
+    clearSelectedTagSystem();
+  };
+  $('#btnSelectTagSystem').style.display = 'none';
+  $('#selectedTagSystemName').style.display = 'inline';
+  $('#selectedTagSystemName').textContent = ts.name;
+  $('#btnClearTagSystem').style.display = 'inline-block';
+}
+
+function clearSelectedTagSystem() {
+  $('#btnSelectTagSystem').style.display = 'inline-block';
+  $('#selectedTagSystemName').style.display = 'none';
+  $('#btnClearTagSystem').style.display = 'none';
+}
+
+async function editTagSystem(sid) {
+  const ts = allTagSystems.find(t => t.id === sid);
+  if (!ts) return;
+  generatedTagCsv = null;
+  tagFile = { type: 'tag_system', tag_system_id: ts.id, name: ts.name, csvContent: ts.csv_content };
+  openTagEditor();
+}
+
+async function copyTagSystem(sid) {
+  try {
+    const res = await fetch(API() + '/api/tag-systems/' + sid + '/copy', { method: 'POST' });
+    if (!res.ok) throw new Error('复制失败');
+    toast('复制成功', 'ok');
+    loadTagLibrary();
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+}
+
+async function deleteTagSystem(sid) {
+  if (!confirm('确定要删除这个标签体系吗？')) return;
+  try {
+    const res = await fetch(API() + '/api/tag-systems/' + sid, { method: 'DELETE' });
+    if (!res.ok) throw new Error('删除失败');
+    toast('删除成功', 'ok');
+    loadTagLibrary();
+    if (tagFile && tagFile.tag_system_id === sid) {
+      tagFile = null;
+      $('#tagFileInfo').style.display = 'none';
+      $('#tagDropzone').style.display = 'block';
+      clearSelectedTagSystem();
+    }
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+}
+
+async function createNewTagSystem() {
+  const name = prompt('请输入新标签体系名称:');
+  if (!name) return;
+  try {
+    const res = await fetch(API() + '/api/tag-systems', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, csv_content: '一级标签,二级标签,三级标签,四级标签\n' }),
+    });
+    if (!res.ok) throw new Error('创建失败');
+    const data = await res.json();
+    toast('创建成功，正在打开编辑器...', 'ok');
+    selectTagSystem(data);
+    openTagEditor();
+    loadTagLibrary();
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+}
+
+loadScenes();
+</script>
+
+<!-- 观远品牌 Footer -->
+<footer style="background:#001529;padding:16px 24px;margin-top:40px;text-align:center;border-top:1px solid rgba(24,144,255,0.15)">
+  <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px">
+    <div style="width:20px;height:20px;background:linear-gradient(135deg,#1890ff 0%,#40a9ff 100%);border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"/></svg>
+    </div>
+    <span style="color:rgba(255,255,255,0.85);font-size:14px;font-weight:500">观远数据 Guandata</span>
+  </div>
+  <div style="color:rgba(255,255,255,0.45);font-size:12px">
+    AI + BI 一站式智能分析平台 · 让业务用起来的现代化BI · VOC智能分析引擎
+  </div>
+</footer>
+</body>
+</html>

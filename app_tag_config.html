@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>标签体系配置 - 画布编辑器</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #f5f6f8;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 顶部工具栏 */
+  .toolbar {
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .toolbar h1 { font-size: 18px; margin-right: auto; color: #333; }
+  .toolbar button, .toolbar label.btn {
+    padding: 6px 14px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .toolbar button:hover, .toolbar label.btn:hover { background: #f0f0f0; border-color: #bbb; }
+  .toolbar button.primary { background: #2196F3; color: #fff; border-color: #2196F3; }
+  .toolbar button.primary:hover { background: #1976D2; }
+  .toolbar button.danger { background: #f44336; color: #fff; border-color: #f44336; }
+  .toolbar button.danger:hover { background: #d32f2f; }
+  .toolbar input[type="file"] { display: none; }
+  .toolbar .stat { font-size: 12px; color: #666; margin-left: 10px; }
+
+  /* 画布 */
+  .canvas-container {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+    background: #f5f6f8;
+  }
+  .canvas {
+    position: relative;
+    min-width: 100%;
+    min-height: 100%;
+  }
+  .connections {
+    position: absolute;
+    top: 0; left: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* 节点 */
+  .node {
+    position: absolute;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 2px solid;
+    background: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+    z-index: 2;
+    transition: all 0.15s;
+    min-width: 110px;
+    max-width: 190px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .node:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  }
+  .node.selected {
+    box-shadow: 0 0 0 4px rgba(33,150,243,0.25), 0 6px 20px rgba(0,0,0,0.15);
+    font-weight: 600;
+  }
+  .node-toggle {
+    position: absolute;
+    right: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #bbb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #666;
+    cursor: pointer;
+    z-index: 10;
+    line-height: 1;
+  }
+  .node-toggle:hover {
+    background: #f0f0f0;
+    border-color: #999;
+  }
+
+  /* 层级颜色 */
+  .node.level-0 { border-color: #E74C3C; background: #fdf2f2; }
+  .node.level-1 { border-color: #E67E22; background: #fef5e7; }
+  .node.level-2 { border-color: #27AE60; background: #eafaf1; }
+  .node.level-3 { border-color: #2980B9; background: #ebf5fb; }
+  .node.selected.level-0 { border-color: #c0392b; background: #fadbd8; }
+  .node.selected.level-1 { border-color: #d35400; background: #fdebd0; }
+  .node.selected.level-2 { border-color: #1e8449; background: #d5f5e3; }
+  .node.selected.level-3 { border-color: #2471a3; background: #d4e6f1; }
+
+  .node .badge {
+    position: absolute;
+    top: -9px;
+    left: 10px;
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 10px;
+    color: #fff;
+    font-weight: 700;
+  }
+  .level-0 .badge { background: #E74C3C; }
+  .level-1 .badge { background: #E67E22; }
+  .level-2 .badge { background: #27AE60; }
+  .level-3 .badge { background: #2980B9; }
+
+  /* 编辑状态 */
+  .node.editing {
+    padding: 0;
+    background: #fffde7 !important;
+    border-color: #fbc02d !important;
+    z-index: 10;
+  }
+  .node.editing input {
+    width: 100%;
+    padding: 8px 14px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    background: transparent;
+    text-align: center;
+    border-radius: 8px;
+  }
+
+  /* 浮动菜单 */
+  .popup-menu {
+    position: absolute;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    padding: 6px;
+    z-index: 100;
+    display: none;
+    min-width: 160px;
+  }
+  .popup-menu.show { display: block; }
+  .popup-menu .menu-item {
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s;
+  }
+  .popup-menu .menu-item:hover { background: #f0f0f0; }
+  .popup-menu .menu-item.delete { color: #f44336; }
+  .popup-menu .menu-item.delete:hover { background: #ffebee; }
+  .popup-menu .divider {
+    height: 1px;
+    background: #eee;
+    margin: 4px 0;
+  }
+  .popup-menu .menu-item .shortcut {
+    margin-left: auto;
+    font-size: 11px;
+    color: #999;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 24px;
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 200;
+  }
+  .toast.show { opacity: 1; }
+
+  /* 不再使用遮罩层，避免阻挡画布滚动 */
+</style>
+</head>
+<body>
+
+<!-- 工具栏 -->
+<div class="toolbar">
+  <h1>🏷️ 标签体系配置</h1>
+  <button onclick="app.addRoot()">➕ 新建一级</button>
+  <button onclick="document.getElementById('csvInput').click()">📥 导入 CSV</button>
+  <input type="file" id="csvInput" accept=".csv" onchange="app.importCSV(this)">
+  <button onclick="app.exportCSV()">📤 导出 CSV</button>
+  <button class="primary" onclick="app.save()">💾 保存</button>
+  <button class="primary" onclick="app.saveToParent()" id="btnSaveToParent" style="display:none;background:#52c41a;border-color:#52c41a">✅ 保存并返回</button>
+  <button onclick="app.expandAll()">▼ 全部展开</button>
+  <button onclick="app.collapseAll()">▶ 全部折叠</button>
+  <button class="danger" onclick="app.clear()">🗑️ 清空</button>
+  <span class="stat" id="statText">0 节点</span>
+</div>
+
+<!-- 画布 -->
+<div class="canvas-container" id="container">
+  <div class="canvas" id="canvas">
+    <svg class="connections" id="svg"></svg>
+    <div class="popup-menu" id="popupMenu">
+  <div class="menu-item" onclick="app.menuAction('addChild')" id="menuAddChild">
+    <span>➕</span> <span>添加子节点</span> <span class="shortcut">Tab</span>
+  </div>
+  <div class="menu-item" onclick="app.menuAction('addSibling')" id="menuAddSibling">
+    <span>➕</span> <span>添加同级节点</span> <span class="shortcut">Enter</span>
+  </div>
+  <div class="divider"></div>
+  <div class="menu-item" onclick="app.menuAction('edit')" id="menuEdit">
+    <span>✏️</span> <span>编辑名称</span> <span class="shortcut">双击</span>
+  </div>
+  <div class="menu-item delete" onclick="app.menuAction('delete')" id="menuDelete">
+    <span>🗑️</span> <span>删除节点</span> <span class="shortcut">Del</span>
+  </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const MAX_DEPTH = 4;
+const LEVEL_NAMES = ["一级", "二级", "三级", "四级"];
+const COL_WIDTH = 230;
+const NODE_H = 44;
+const NODE_GAP = 18;
+
+function uid() { return Math.random().toString(36).substring(2, 10); }
+function newNode(name, depth = 0) {
+  return { id: uid(), name: name || `${LEVEL_NAMES[depth]}标签`, children: [], depth, collapsed: false };
+}
+
+const app = {
+  tree: [],
+  selectedId: null,
+  editingId: null,
+
+  async init() {
+    console.log('[VOC-DEBUG] init() 开始, _loadedFromParent=', window._loadedFromParent);
+    // 如果从父页面收到了 CSV 数据，直接加载，不从 localStorage 或默认恢复
+    if (window._loadedFromParent) {
+      console.log('[VOC-DEBUG] 从父页面加载，跳过 localStorage');
+      this.render();
+      return;
+    }
+    // 否则尝试从 localStorage 恢复（用户之前手动编辑的）
+    const saved = localStorage.getItem('tag_tree_v2');
+    if (saved) {
+      try { this.tree = JSON.parse(saved); console.log('[VOC-DEBUG] 从 localStorage 恢复', this.tree.length, '个根节点'); } catch(e) {}
+    }
+    // 没有 localStorage 且没有父页面数据 → 从0开始（空画布）
+    console.log('[VOC-DEBUG] 渲染空画布, tree.length=', this.tree.length);
+    this.render();
+  },
+
+  loadFromText(csvText) {
+    const lines = csvText.split('\n').filter(l => l.trim());
+    const rows = lines.slice(1).map(l => {
+      const p = []; let cur = '', inQ = false;
+      for (const ch of l) {
+        if (ch === '"') inQ = !inQ;
+        else if (ch === ',' && !inQ) { p.push(cur.trim()); cur = ''; }
+        else cur += ch;
+      }
+      p.push(cur.trim());
+      return p;
+    });
+    this.tree = this.csvToTree(rows);
+    this.selectedId = null;
+    this.render();
+    this.toast('已加载标签体系');
+  },
+
+  async loadDefaultCSV() {
+    try {
+      const resp = await fetch('./configs/tag_hierarchy.csv');
+      if (!resp.ok) throw new Error('未找到默认标签体系');
+      const text = await resp.text();
+      const lines = text.split('\n').filter(l => l.trim());
+      const rows = lines.slice(1).map(l => {
+        const p = []; let cur = '', inQ = false;
+        for (const ch of l) {
+          if (ch === '"') inQ = !inQ;
+          else if (ch === ',' && !inQ) { p.push(cur.trim()); cur = ''; }
+          else cur += ch;
+        }
+        p.push(cur.trim());
+        return p;
+      });
+      this.tree = this.csvToTree(rows);
+      this.toast('已加载默认标签体系');
+    } catch (e) {
+      this.tree = [];
+      console.log('默认标签体系加载失败:', e);
+    }
+  },
+
+  getDefaultTree() {
+    // 尝试从服务器加载 configs/tag_hierarchy.csv
+    return [];
+  },
+
+  // ── 查找 ──
+  findNode(id, nodes = this.tree) {
+    for (const n of nodes) {
+      if (n.id === id) return n;
+      const f = this.findNode(id, n.children);
+      if (f) return f;
+    }
+    return null;
+  },
+  findParent(id, nodes = this.tree) {
+    for (const n of nodes) {
+      if (n.children.some(c => c.id === id)) return n;
+      const f = this.findParent(id, n.children);
+      if (f) return f;
+    }
+    return null;
+  },
+  getDepth(id) {
+    let d = 0, cur = this.findParent(id);
+    while (cur) { d++; cur = this.findParent(cur.id); }
+    return d;
+  },
+  countNodes(nodes = this.tree) {
+    let c = 0;
+    for (const n of nodes) { c++; c += this.countNodes(n.children); }
+    return c;
+  },
+
+  // ── 渲染 ──
+  render() {
+    console.log('[VOC-DEBUG] render() 开始, tree.length=', this.tree.length);
+    const canvas = document.getElementById('canvas');
+    const svg = document.getElementById('svg');
+    canvas.querySelectorAll('.node').forEach(n => n.remove());
+    svg.innerHTML = '';
+    this.hideMenu();
+
+    if (this.tree.length === 0) { this.updateUI(); console.log('[VOC-DEBUG] 空树，直接返回'); return; }
+
+    this.layoutTree();
+
+    let maxX = 0, maxY = 0;
+    function bounds(nodes) {
+      for (const n of nodes) {
+        maxX = Math.max(maxX, n.x + 220);
+        maxY = Math.max(maxY, n.y + 70);
+        if (!n.collapsed) bounds(n.children);
+      }
+    }
+    bounds(this.tree);
+
+    const contW = document.getElementById('container').clientWidth;
+    const contH = document.getElementById('container').clientHeight;
+    canvas.style.width = Math.max(maxX + 40, contW) + 'px';
+    canvas.style.height = Math.max(maxY + 40, contH) + 'px';
+    svg.setAttribute('width', canvas.style.width);
+    svg.setAttribute('height', canvas.style.height);
+
+    this.drawNodes(this.tree);
+    this.drawConnections(this.tree);
+    this.updateUI();
+  },
+
+  layoutTree() {
+    let nextY = 30;
+    function walk(nodes, depth) {
+      for (const node of nodes) {
+        node.depth = depth;
+        node.x = depth * COL_WIDTH + 30;
+        const visibleChildren = node.collapsed ? [] : node.children;
+        if (!visibleChildren || visibleChildren.length === 0) {
+          node.y = nextY;
+          nextY += NODE_H + NODE_GAP;
+        } else {
+          walk(visibleChildren, depth + 1);
+          const first = visibleChildren[0];
+          const last = visibleChildren[visibleChildren.length - 1];
+          node.y = (first.y + last.y) / 2;
+        }
+      }
+    }
+    walk(this.tree, 0);
+  },
+
+  drawNodes(nodes) {
+    for (const node of nodes) {
+      const el = document.createElement('div');
+      el.className = `node level-${node.depth}`;
+      if (node.id === this.selectedId) el.classList.add('selected');
+      if (node.collapsed) el.classList.add('collapsed');
+      el.style.left = node.x + 'px';
+      el.style.top = node.y + 'px';
+      el.dataset.id = node.id;
+
+      const badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.textContent = LEVEL_NAMES[node.depth];
+      el.appendChild(badge);
+
+      const text = document.createElement('span');
+      text.textContent = node.name;
+      text.className = 'text';
+      el.appendChild(text);
+
+      if (node.children && node.children.length > 0) {
+        const toggleBtn = document.createElement('span');
+        toggleBtn.className = 'node-toggle';
+        toggleBtn.textContent = node.collapsed ? '+' : '−';
+        toggleBtn.onclick = (e) => {
+          e.stopPropagation();
+          node.collapsed = !node.collapsed;
+          app.render();
+        };
+        el.appendChild(toggleBtn);
+      }
+
+      if (this.editingId === node.id) {
+        el.classList.add('editing');
+        const input = document.createElement('input');
+        input.value = node.name;
+        input.onblur = () => this.finishEdit(node.id, input.value);
+        input.onkeydown = (e) => { if (e.key === 'Enter') input.blur(); };
+        el.innerHTML = '';
+        el.appendChild(input);
+        setTimeout(() => input.focus(), 10);
+      }
+
+      el.onclick = (e) => {
+        e.stopPropagation();
+        if (this.editingId === node.id) return;
+        this.selectedId = node.id;
+        this.showMenuFor(node, el);
+      };
+
+      el.ondblclick = (e) => {
+        e.stopPropagation();
+        this.startEdit(node.id);
+      };
+
+      document.getElementById('canvas').appendChild(el);
+      if (!node.collapsed) this.drawNodes(node.children);
+    }
+  },
+
+  drawConnections(nodes) {
+    const svg = document.getElementById('svg');
+    for (const node of nodes) {
+      if (node.collapsed) continue;
+      for (const child of node.children) {
+        const x1 = node.x + 190;
+        const y1 = node.y + NODE_H / 2;
+        const x2 = child.x;
+        const y2 = child.y + NODE_H / 2;
+        const cx = (x1 + x2) / 2;
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`);
+        path.setAttribute('stroke', '#bbb');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('fill', 'none');
+        svg.appendChild(path);
+      }
+      this.drawConnections(node.children);
+    }
+  },
+
+  updateUI() {
+    const node = this.selectedId ? this.findNode(this.selectedId) : null;
+    document.getElementById('statText').textContent = `${this.countNodes()} 节点`;
+  },
+
+  // ── 浮动菜单 ──
+  showMenuFor(node, el) {
+    const menu = document.getElementById('popupMenu');
+
+    // 更新菜单项
+    document.getElementById('menuAddChild').style.display = node.depth < MAX_DEPTH - 1 ? 'flex' : 'none';
+
+    // 定位菜单：节点右下方
+    let left = node.x + 20;
+    let top = node.y + NODE_H + 8;
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    menu.classList.add('show');
+  },
+
+  hideMenu() {
+    document.getElementById('popupMenu').classList.remove('show');
+  },
+
+  menuAction(action) {
+    const node = this.selectedId ? this.findNode(this.selectedId) : null;
+    if (!node) return;
+    this.hideMenu();
+
+    switch (action) {
+      case 'addChild':
+        this.addChildTo(node);
+        break;
+      case 'addSibling':
+        this.addSiblingTo(node);
+        break;
+      case 'edit':
+        this.startEdit(node.id);
+        break;
+      case 'delete':
+        this.deleteNodeById(node.id);
+        break;
+    }
+  },
+
+  // ── 编辑 ──
+  startEdit(id) {
+    this.editingId = id;
+    this.render();
+  },
+  finishEdit(id, val) {
+    const n = this.findNode(id);
+    if (n && val.trim()) {
+      n.name = val.trim();
+      this.editingId = null;
+      this.render();
+      this.toast('已修改');
+    }
+  },
+
+  // ── 增删 ──
+  addRoot() {
+    console.log('[VOC-DEBUG] addRoot() 被调用, 当前 tree.length=', this.tree.length);
+    try {
+      const node = newNode(`${LEVEL_NAMES[0]}标签`, 0);
+      console.log('[VOC-DEBUG] 创建节点:', node);
+      this.tree.push(node);
+      console.log('[VOC-DEBUG] push 后 tree.length=', this.tree.length);
+      this.render();
+      console.log('[VOC-DEBUG] render() 完成, DOM节点数=', document.querySelectorAll('.node').length);
+      this.toast('已添加一级标签');
+    } catch (e) {
+      console.error('[VOC-DEBUG] addRoot() 异常:', e);
+      alert('新建节点失败: ' + e.message);
+    }
+  },
+  addChildTo(parent) {
+    if (parent.depth >= MAX_DEPTH - 1) {
+      this.toast('已达最大层级（四级）');
+      return;
+    }
+    parent.children.push(newNode(`${LEVEL_NAMES[parent.depth + 1]}标签`, parent.depth + 1));
+    parent.collapsed = false;
+    this.render();
+    this.toast('已添加子节点');
+  },
+  addSiblingTo(node) {
+    const parent = this.findParent(node.id);
+    const depth = this.getDepth(node.id);
+    const n = newNode(`${LEVEL_NAMES[depth]}标签`, depth);
+    if (parent) parent.children.push(n);
+    else this.tree.push(n);
+    this.selectedId = n.id;
+    this.render();
+    this.toast('已添加同级节点');
+  },
+  deleteNodeById(id) {
+    if (!confirm('确定删除该节点及其所有子节点？')) return;
+    const parent = this.findParent(id);
+    if (parent) parent.children = parent.children.filter(c => c.id !== id);
+    else this.tree = this.tree.filter(c => c.id !== id);
+    this.selectedId = null;
+    this.render();
+    this.toast('已删除');
+  },
+
+  expandAll() {
+    function walk(nodes) {
+      for (const n of nodes) {
+        n.collapsed = false;
+        walk(n.children);
+      }
+    }
+    walk(this.tree);
+    this.render();
+    this.toast('已全部展开');
+  },
+
+  collapseAll() {
+    function walk(nodes) {
+      for (const n of nodes) {
+        if (n.children && n.children.length > 0) {
+          n.collapsed = true;
+        }
+        walk(n.children);
+      }
+    }
+    walk(this.tree);
+    this.render();
+    this.toast('已全部折叠');
+  },
+
+  // ── 导入导出 ──
+  treeToCSV() {
+    const rows = [];
+    function walk(n, path) {
+      const p = [...path, n.name];
+      if (!n.children || n.children.length === 0) {
+        while (p.length < MAX_DEPTH) p.push('');
+        rows.push(p);
+      } else {
+        for (const c of n.children) walk(c, p);
+      }
+    }
+    for (const r of this.tree) walk(r, []);
+    return rows;
+  },
+  exportCSV() {
+    const rows = this.treeToCSV();
+    const hdr = ['一级标签', '二级标签', '三级标签', '四级标签'];
+    const lines = [hdr.join(',')];
+    for (const r of rows) {
+      lines.push(r.map(c => `"${c}"`).join(','));
+    }
+    const blob = new Blob(["\uFEFF" + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'tag_hierarchy.csv'; a.click();
+    URL.revokeObjectURL(url);
+    this.toast('CSV 已导出');
+  },
+  importCSV(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const lines = e.target.result.split('\n').filter(l => l.trim());
+      const rows = lines.slice(1).map(l => {
+        const p = []; let cur = '', inQ = false;
+        for (const ch of l) {
+          if (ch === '"') inQ = !inQ;
+          else if (ch === ',' && !inQ) { p.push(cur.trim()); cur = ''; }
+          else cur += ch;
+        }
+        p.push(cur.trim());
+        return p;
+      });
+      this.tree = this.csvToTree(rows);
+      this.selectedId = null;
+      this.render();
+      this.toast('CSV 已导入');
+    };
+    reader.readAsText(file);
+    input.value = '';
+  },
+  csvToTree(rows) {
+    const tree = [], m1 = {}, m2 = {}, m3 = {};
+    for (const row of rows) {
+      if (!row || row.every(c => !c.trim())) continue;
+      const a = (row[0] || '').trim(), b = (row[1] || '').trim(), c = (row[2] || '').trim(), d = (row[3] || '').trim();
+      if (!a) continue;
+      if (!m1[a]) { m1[a] = newNode(a, 0); tree.push(m1[a]); }
+      if (!b) continue;
+      const k2 = `${a}>${b}`;
+      if (!m2[k2]) { m2[k2] = newNode(b, 1); m1[a].children.push(m2[k2]); }
+      if (!c) continue;
+      const k3 = `${k2}>${c}`;
+      if (!m3[k3]) { m3[k3] = newNode(c, 2); m2[k2].children.push(m3[k3]); }
+      if (!d) continue;
+      m3[k3].children.push(newNode(d, 3));
+    }
+    return tree;
+  },
+
+  saveToParent() {
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'save-csv', csv: this.treeToCSV() }, '*');
+    }
+  },
+
+  save() {
+    localStorage.setItem('tag_tree_v2', JSON.stringify(this.tree));
+    this.toast('已保存到浏览器本地');
+  },
+  clear() {
+    if (!confirm('确定清空所有标签？')) return;
+    this.tree = []; this.selectedId = null;
+    this.render(); this.toast('已清空');
+  },
+  toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+  }
+};
+
+// 点击空白处取消选中
+document.getElementById('canvas').addEventListener('click', (e) => {
+  if (e.target.id === 'canvas' || e.target.id === 'svg') {
+    app.selectedId = null; app.hideMenu(); app.render();
+  }
+});
+
+// 点击非菜单区域关闭菜单（不阻挡画布滚动）
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('popupMenu');
+  if (!menu.classList.contains('show')) return;
+  // 如果点击的是菜单内部或节点，不关闭
+  if (menu.contains(e.target)) return;
+  if (e.target.closest('.node')) return;
+  app.hideMenu();
+});
+
+// 键盘
+document.addEventListener('keydown', (e) => {
+  if (app.editingId) return;
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (app.selectedId) app.deleteNodeById(app.selectedId);
+  }
+  if (e.key === 'Enter' && app.selectedId) {
+    const n = app.findNode(app.selectedId);
+    if (n) app.showMenuFor(n, document.querySelector(`.node[data-id="${app.selectedId}"]`));
+  }
+  if (e.key === 'Tab' && app.selectedId) {
+    e.preventDefault();
+    const n = app.findNode(app.selectedId);
+    if (n) app.addChildTo(n);
+  }
+  if (e.key === 'Escape') app.hideMenu();
+});
+
+// 提前注册 message 监听，接收来自父页面的 CSV 数据
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'load-csv') {
+    window._loadedFromParent = true;
+    app.loadFromText(e.data.csv);
+    const btn = document.getElementById('btnSaveToParent');
+    if (btn) btn.style.display = 'inline-block';
+  }
+});
+
+// 全局错误捕获，帮助诊断
+window.onerror = function(msg, url, line, col, err) {
+  console.error('[VOC-ERROR]', msg, 'at line', line, 'col', col, err);
+};
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('[VOC-UNHANDLED]', e.reason);
+});
+
+console.log('[VOC-DEBUG] 脚本加载完成，app=', typeof app, 'tree=', typeof app.tree);
+app.init();
+</script>
+</body>
+</html>

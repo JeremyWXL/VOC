@@ -1,0 +1,55 @@
+[project]
+name = "review-tagger"
+version = "0.2.0"
+description = "电商评论数据智能标签化系统（LLM + 规则混合）"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "openai>=1.30",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "typer>=0.12.0",
+    "rich>=13.0",
+    "pandas>=2.0",
+    "python-dotenv>=1.0",
+    "loguru>=0.7",
+    "pyyaml>=6.0",
+    "tenacity>=8.0",
+    "tiktoken>=0.7",
+    "openpyxl>=3.1",
+    "httpx>=0.27",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "python-multipart>=0.0.9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "black>=24.0",
+    "ruff>=0.3",
+    "mypy>=1.9",
+]
+
+[project.scripts]
+review-tagger = "review_tagger.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/review_tagger"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
