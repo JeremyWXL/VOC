@@ -3120,11 +3120,13 @@ async function loadTagLibrary() {
     const res = await fetch(API() + '/api/tag-systems');
     const data = await res.json();
     allTagSystems = data.items || [];
+    console.log('[VOC-DEBUG] loadTagLibrary 成功, 共', allTagSystems.length, '条');
     populateLibrarySceneFilter();
     renderTagLibrary();
     updateLibraryStats();
   } catch (e) {
-    console.log('加载标签库失败', e);
+    console.error('[VOC-DEBUG] 加载标签库失败', e);
+    toast('加载标签库失败: ' + e.message, 'err');
   }
 }
 
@@ -3151,6 +3153,7 @@ function toggleLibraryView() {
 }
 
 function renderTagLibrary() {
+  console.log('[VOC-DEBUG] renderTagLibrary 开始, allTagSystems.length=', allTagSystems.length);
   const grid = $('#tagLibraryGrid');
   const list = $('#tagLibraryList');
   const empty = $('#tagLibraryEmpty');
@@ -3163,10 +3166,13 @@ function renderTagLibrary() {
     return true;
   });
 
+  console.log('[VOC-DEBUG] 过滤后 items.length=', items.length, 'search=', search, 'scene=', scene);
+
   if (items.length === 0) {
     grid.style.display = 'none';
     list.style.display = 'none';
     empty.style.display = 'block';
+    console.log('[VOC-DEBUG] 显示空状态');
     return;
   }
   grid.style.display = libraryViewMode === 'grid' ? 'grid' : 'none';
@@ -3241,20 +3247,26 @@ function importTagSystemFromFile() {
 async function handleTagSystemImport(input) {
   const file = input.files[0];
   if (!file) return;
+  console.log('[VOC-DEBUG] 开始导入文件:', file.name);
   const reader = new FileReader();
   reader.onload = async (e) => {
     const csv = e.target.result;
     const name = file.name.replace(/\.csv$/i, '');
+    console.log('[VOC-DEBUG] 文件内容长度:', csv.length);
     try {
       const res = await fetch(API() + '/api/tag-systems', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, csv_content: csv }),
       });
+      console.log('[VOC-DEBUG] API 响应状态:', res.status);
       if (!res.ok) throw new Error('导入失败');
+      const result = await res.json();
+      console.log('[VOC-DEBUG] 导入成功, id=', result.id);
       toast('导入成功', 'ok');
       loadTagLibrary();
     } catch (err) {
+      console.error('[VOC-DEBUG] 导入失败:', err);
       toast(err.message, 'err');
     }
   };
