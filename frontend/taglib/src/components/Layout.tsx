@@ -29,6 +29,7 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const isInIframe = typeof window !== 'undefined' && window.parent !== window;
 
   // Auto-collapse sidebar on narrow screens
   useEffect(() => {
@@ -43,6 +44,18 @@ export default function Layout({ children }: LayoutProps) {
     window.addEventListener('resize', checkWidth);
     return () => window.removeEventListener('resize', checkWidth);
   }, []);
+
+  // Listen for parent navigation messages
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      const msg = e.data;
+      if (msg && msg.type === 'navigate' && msg.path) {
+        navigate(msg.path);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [navigate]);
 
   // Build breadcrumbs
   const breadcrumbs: BreadcrumbItem[] = [{ label: '工作台', path: '/' }];
@@ -69,18 +82,19 @@ export default function Layout({ children }: LayoutProps) {
       {/* Main Content */}
       <main
         className={cn(
-          'pt-14 min-h-[100dvh] transition-all duration-300 bg-[#FAFBFC]',
-          sidebarCollapsed ? 'pl-16' : 'pl-60'
+          'min-h-[100dvh] transition-all duration-300 bg-[#FAFBFC]',
+          !isInIframe && 'pt-14',
+          !isInIframe && (sidebarCollapsed ? 'pl-16' : 'pl-60')
         )}
       >
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
-          className="p-6"
+          className={cn('p-6', isInIframe && 'p-0')}
         >
-          {/* Breadcrumb */}
-          {location.pathname !== '/' && (
+          {/* Breadcrumb - hidden in iframe */}
+          {!isInIframe && location.pathname !== '/' && (
             <nav className="flex items-center gap-1.5 mb-5 text-sm">
               <button
                 onClick={() => navigate('/')}

@@ -9,11 +9,11 @@ import { Input } from '@/components/ui/input';
 interface PropertiesPanelProps {
   node: TagNode | null;
   nodes: TagNode[];
-  atomicTags: AtomicTag[];
+  atomicTags?: AtomicTag[];
   systemName: string;
   onUpdateNode: (nodeId: string, updates: Partial<TagNode>) => void;
-  onUnlinkAtomicTag: (nodeId: string) => void;
-  onLinkAtomicTag: (nodeId: string, tagId: string) => void;
+  onUnlinkAtomicTag?: (nodeId: string) => void;
+  onLinkAtomicTag?: (nodeId: string, tagId: string) => void;
   onDeleteNode: (nodeId: string) => void;
   onClose: () => void;
   onNavigateToNode: (nodeId: string) => void;
@@ -22,11 +22,11 @@ interface PropertiesPanelProps {
 export default function PropertiesPanel({
   node,
   nodes,
-  atomicTags,
+  atomicTags = [],
   systemName,
   onUpdateNode,
-  onUnlinkAtomicTag,
-  onLinkAtomicTag,
+  onUnlinkAtomicTag = () => {},
+  onLinkAtomicTag = () => {},
   onDeleteNode,
   onClose,
   onNavigateToNode,

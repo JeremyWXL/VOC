@@ -30,16 +30,16 @@ import { toast } from 'sonner';
 interface TreeCanvasProps {
   systemName: string;
   nodes: TagNode[];
-  atomicTags: AtomicTag[];
+  atomicTags?: AtomicTag[];
   selectedNodeId: string | null;
-  draggedAtomicTag: AtomicTag | null;
+  draggedAtomicTag?: AtomicTag | null;
   onSelectNode: (id: string | null) => void;
   onUpdateNodes: (nodes: TagNode[]) => void;
   onUpdateNode: (nodeId: string, updates: Partial<TagNode>) => void;
   onAddNode: (parentId: string | undefined, level: 1 | 2 | 3) => void;
   onDeleteNode: (nodeId: string) => void;
-  onLinkAtomicTag: (nodeId: string, tagId: string) => void;
-  onUnlinkAtomicTag: (nodeId: string) => void;
+  onLinkAtomicTag?: (nodeId: string, tagId: string) => void;
+  onUnlinkAtomicTag?: (nodeId: string) => void;
 }
 
 function cn(...classes: Array<string | false | undefined>) {
@@ -53,16 +53,16 @@ function cn(...classes: Array<string | false | undefined>) {
 export default function TreeCanvas({
   systemName,
   nodes,
-  atomicTags,
+  atomicTags = [],
   selectedNodeId,
-  draggedAtomicTag,
+  draggedAtomicTag = null,
   onSelectNode,
   onUpdateNodes,
   onUpdateNode,
   onAddNode,
   onDeleteNode,
-  onLinkAtomicTag,
-  onUnlinkAtomicTag,
+  onLinkAtomicTag = () => {},
+  onUnlinkAtomicTag = () => {},
 }: TreeCanvasProps) {
   const [zoom, setZoom] = useState(1);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
@@ -323,7 +323,7 @@ interface NodeCardProps {
   onDropCard: (e: React.DragEvent) => void;
   /* Parent-passed for recursive children */
   nodes: TagNode[];
-  atomicTags: AtomicTag[];
+  atomicTags?: AtomicTag[];
   selectedNodeId: string | null;
   editingNodeId: string | null;
   dropTargetId: string | null;
@@ -336,8 +336,8 @@ interface NodeCardProps {
   onAddNode: (parentId: string | undefined, level: 1 | 2 | 3) => void;
   onDeleteNode: (nodeId: string) => void;
   onReorderNode: (nodeId: string, d: 'up' | 'down') => void;
-  onLinkAtomicTag: (nodeId: string, tagId: string) => void;
-  onUnlinkAtomicTag: (nodeId: string) => void;
+  onLinkAtomicTag?: (nodeId: string, tagId: string) => void;
+  onUnlinkAtomicTag?: (nodeId: string) => void;
   onDragOverNode: (e: React.DragEvent, nodeId: string) => void;
   onDragLeaveNode: () => void;
   onDropNode: (e: React.DragEvent, nodeId: string) => void;
@@ -366,7 +366,7 @@ function NodeCard({
   onDragLeaveCard,
   onDropCard,
   nodes,
-  atomicTags,
+  atomicTags = [],
   selectedNodeId,
   editingNodeId,
   dropTargetId,
@@ -379,8 +379,8 @@ function NodeCard({
   onAddNode,
   onDeleteNode,
   onReorderNode,
-  onLinkAtomicTag,
-  onUnlinkAtomicTag,
+  onLinkAtomicTag = () => {},
+  onUnlinkAtomicTag = () => {},
   onDragOverNode,
   onDragLeaveNode,
   onDropNode,

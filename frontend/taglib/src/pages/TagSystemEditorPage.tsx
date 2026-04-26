@@ -6,15 +6,14 @@ import {
   Save,
   Eye,
   ArrowLeft,
-  Rocket,
   Pencil,
   ChevronLeft,
   ChevronRight,
   Check,
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
-import type { TagNode, AtomicTag, SystemStatus } from '@/types';
-import { PURCHASE_PHASE_LABELS, SYSTEM_STATUS_LABELS, TAG_CATEGORY_COLORS } from '@/types';
+import type { TagNode, SystemStatus } from '@/types';
+import { SYSTEM_STATUS_LABELS } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -24,17 +23,6 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from '@/components/ui/alert-dialog';
-import AtomicTagPanel from '@/components/tag-system/AtomicTagPanel';
 import TreeCanvas from '@/components/tag-system/TreeCanvas';
 import PropertiesPanel from '@/components/tag-system/PropertiesPanel';
 
@@ -57,7 +45,6 @@ export default function TagSystemEditorPage() {
   const {
     tagSystems,
     tagTrees,
-    atomicTags,
     updateTagTree,
     updateTagSystem,
   } = useData();
@@ -68,14 +55,12 @@ export default function TagSystemEditorPage() {
   /* ---- local state for tree editing ---- */
   const [nodes, setNodes] = useState<TagNode[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [draggedAtomicTag, setDraggedAtomicTag] = useState<AtomicTag | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   /* ---- UI state ---- */
   const [systemNameEditing, setSystemNameEditing] = useState(false);
   const [systemNameValue, setSystemNameValue] = useState('');
-  const [publishOpen, setPublishOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
@@ -163,7 +148,6 @@ export default function TagSystemEditorPage() {
       const updated = [...nodes, newNode];
       setNodes(updated);
       setSelectedNodeId(newNode.id);
-      // Start editing new node name after a brief delay for render
       setTimeout(() => {
         setSelectedNodeId(newNode.id);
       }, 50);
@@ -183,7 +167,6 @@ export default function TagSystemEditorPage() {
       const node = nodes.find((n) => n.id === nodeId);
       if (!node) return;
 
-      // Count descendants
       const getDescendants = (id: string): string[] => {
         const children = nodes.filter((n) => n.parentId === id);
         return [...children.map((c) => c.id), ...children.flatMap((c) => getDescendants(c.id))];
@@ -199,7 +182,6 @@ export default function TagSystemEditorPage() {
 
       setNodes((prev) => {
         const filtered = prev.filter((n) => n.id !== nodeId);
-        // Reorder siblings
         const siblings = filtered.filter((n) => n.parentId === node.parentId).sort((a, b) => a.order - b.order);
         const reordered = siblings.map((s, i) => ({ ...s, order: i }));
         return filtered.map((n) => {
@@ -213,33 +195,9 @@ export default function TagSystemEditorPage() {
     [nodes]
   );
 
-  const handleLinkAtomicTag = useCallback(
-    (nodeId: string, tagId: string) => {
-      const tag = atomicTags.find((t) => t.id === tagId);
-      if (!tag) return;
-      setNodes((prev) =>
-        prev.map((n) => (n.id === nodeId ? { ...n, atomicTagId: tagId, name: tag.name } : n))
-      );
-    },
-    [atomicTags]
-  );
-
-  const handleUnlinkAtomicTag = useCallback((nodeId: string) => {
-    setNodes((prev) => prev.map((n) => (n.id === nodeId ? { ...n, atomicTagId: undefined } : n)));
-  }, []);
-
   const handleUpdateNodes = useCallback((updated: TagNode[]) => {
     setNodes(updated);
   }, []);
-
-  /* ---- publish ---- */
-  const handlePublish = useCallback(() => {
-    if (!id || !system) return;
-    updateTagSystem(id, { status: 'published' as SystemStatus });
-    handleSave();
-    setPublishOpen(false);
-    toast.success('标签体系已发布');
-  }, [id, system, updateTagSystem, handleSave]);
 
   /* ---- rename system ---- */
   const handleSystemRename = useCallback(() => {
@@ -256,7 +214,8 @@ export default function TagSystemEditorPage() {
   );
 
   const nodeCount = nodes.length;
-  const referencedCount = nodes.filter((n) => n.atomicTagId).length;
+
+  const isInIframe = typeof window !== 'undefined' && window.parent !== window;
 
   /* ---- not found ---- */
   if (!system) {
@@ -264,7 +223,7 @@ export default function TagSystemEditorPage() {
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-[1440px] mx-auto text-center py-20"
+        className={`${isInIframe ? 'w-full' : 'max-w-[1440px] mx-auto'} text-center py-20`}
       >
         <p className="text-[#9CA3AF]">标签体系不存在或已被删除</p>
         <Button variant="outline" className="mt-4" onClick={() => navigate('/tag-systems')}>
@@ -305,7 +264,7 @@ export default function TagSystemEditorPage() {
                 {SYSTEM_STATUS_LABELS[system.status]}
               </span>
               <span className="text-[11px] text-[#9CA3AF]">
-                {PURCHASE_PHASE_LABELS[system.scenario.phase]} · {system.scenario.category} · {system.scenario.audience}
+                标签体系 · {nodeCount}个节点
               </span>
             </div>
             <div className="flex items-center gap-2 mt-0.5">
@@ -371,16 +330,6 @@ export default function TagSystemEditorPage() {
             <Eye size={14} className="mr-1" />
             预览
           </Button>
-          {system.status !== 'published' && (
-            <Button
-              size="sm"
-              className="h-8 text-xs bg-[#10B981] hover:bg-[#059669] text-white"
-              onClick={() => setPublishOpen(true)}
-            >
-              <Rocket size={14} className="mr-1" />
-              发布
-            </Button>
-          )}
           <div className="w-px h-5 bg-[#E5E7EB] mx-1" />
           <Button
             variant="ghost"
@@ -405,7 +354,7 @@ export default function TagSystemEditorPage() {
 
       {/* ====== Three-panel layout ====== */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left panel - Atomic Tag Library */}
+        {/* Left panel */}
         <AnimatePresence initial={false}>
           {leftPanelOpen && (
             <motion.div
@@ -416,10 +365,10 @@ export default function TagSystemEditorPage() {
               transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
               className="flex-shrink-0 overflow-hidden"
             >
-              <AtomicTagPanel
-                atomicTags={atomicTags}
-                onDragStart={(tag) => setDraggedAtomicTag(tag)}
-              />
+              <div className="w-[280px] h-full bg-[#F9FAFB] border-r border-[#E5E7EB] p-4">
+                <h3 className="text-sm font-medium text-[#374151] mb-2">标签体系结构</h3>
+                <p className="text-xs text-[#9CA3AF]">在画布中点击节点进行编辑，右键添加子节点。</p>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -429,16 +378,12 @@ export default function TagSystemEditorPage() {
           <TreeCanvas
             systemName={system.name}
             nodes={nodes}
-            atomicTags={atomicTags}
             selectedNodeId={selectedNodeId}
-            draggedAtomicTag={draggedAtomicTag}
             onSelectNode={setSelectedNodeId}
             onUpdateNodes={handleUpdateNodes}
             onUpdateNode={handleUpdateNode}
             onAddNode={handleAddNode}
             onDeleteNode={handleDeleteNode}
-            onLinkAtomicTag={handleLinkAtomicTag}
-            onUnlinkAtomicTag={handleUnlinkAtomicTag}
           />
         </div>
 
@@ -456,11 +401,8 @@ export default function TagSystemEditorPage() {
               <PropertiesPanel
                 node={selectedNode}
                 nodes={nodes}
-                atomicTags={atomicTags}
                 systemName={system.name}
                 onUpdateNode={handleUpdateNode}
-                onUnlinkAtomicTag={handleUnlinkAtomicTag}
-                onLinkAtomicTag={handleLinkAtomicTag}
                 onDeleteNode={handleDeleteNode}
                 onClose={() => setSelectedNodeId(null)}
                 onNavigateToNode={(nodeId) => setSelectedNodeId(nodeId)}
@@ -469,41 +411,6 @@ export default function TagSystemEditorPage() {
           )}
         </AnimatePresence>
       </div>
-
-      {/* ====== Publish Dialog ====== */}
-      <AlertDialog open={publishOpen} onOpenChange={setPublishOpen}>
-        <AlertDialogContent className="max-w-[440px]">
-          <AlertDialogHeader className="items-center text-center">
-            <div className="w-12 h-12 rounded-full bg-[#ECFDF5] flex items-center justify-center mb-2">
-              <Rocket size={24} className="text-[#10B981]" />
-            </div>
-            <AlertDialogTitle className="text-base font-semibold">确认发布标签体系？</AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-[#6B7280]">
-              发布后该标签体系将可用于评论标注任务。请确保节点结构和引用关系已配置完成。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="bg-[#F9FAFB] rounded-lg p-3 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-[#9CA3AF]">体系名称</span>
-              <span className="font-medium text-[#1F2937]">{system.name}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-[#9CA3AF]">节点总数</span>
-              <span className="font-medium text-[#1F2937]">{nodeCount}个</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-[#9CA3AF]">已引用原子标签</span>
-              <span className="font-medium text-[#1F2937]">{referencedCount}个</span>
-            </div>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handlePublish} className="bg-[#10B981] hover:bg-[#059669] text-white">
-              确认发布
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* ====== Preview Dialog ====== */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
@@ -522,8 +429,10 @@ export default function TagSystemEditorPage() {
               <div className="text-xs text-[#9CA3AF]">节点总数</div>
             </div>
             <div className="bg-[#F9FAFB] rounded-lg p-3 text-center">
-              <div className="text-xl font-semibold text-[#1F2937]">{referencedCount}</div>
-              <div className="text-xs text-[#9CA3AF]">已引用标签</div>
+              <div className="text-xl font-semibold text-[#1F2937]">
+                {nodes.length > 0 ? Math.max(...nodes.map((n) => n.level)) : 0}
+              </div>
+              <div className="text-xs text-[#9CA3AF]">最大层级</div>
             </div>
             <div className="bg-[#F9FAFB] rounded-lg p-3 text-center">
               <div className="text-xl font-semibold text-[#1F2937]">
@@ -543,7 +452,6 @@ export default function TagSystemEditorPage() {
                   key={root.id}
                   node={root}
                   nodes={nodes}
-                  atomicTags={atomicTags}
                   depth={0}
                 />
               ))}
@@ -565,20 +473,15 @@ export default function TagSystemEditorPage() {
 function PreviewTreeNode({
   node,
   nodes,
-  atomicTags,
   depth,
 }: {
   node: TagNode;
   nodes: TagNode[];
-  atomicTags: AtomicTag[];
   depth: number;
 }) {
   const children = nodes
     .filter((n) => n.parentId === node.id)
     .sort((a, b) => a.order - b.order);
-  const tag = node.atomicTagId
-    ? atomicTags.find((t) => t.id === node.atomicTagId)
-    : null;
 
   return (
     <div className={cn('ml-4', depth === 0 && 'ml-0')}>
@@ -592,20 +495,9 @@ function PreviewTreeNode({
         <span className={cn('text-sm', depth === 0 && 'font-medium text-[#1F2937]')}>
           {node.name}
         </span>
-        {tag && (
-          <span
-            className="text-[10px] px-1.5 py-0.5 rounded-full"
-            style={{
-              backgroundColor: TAG_CATEGORY_COLORS[tag.category].bg,
-              color: TAG_CATEGORY_COLORS[tag.category].text,
-            }}
-          >
-            ◆ {tag.name}
-          </span>
-        )}
       </div>
       {children.map((child) => (
-        <PreviewTreeNode key={child.id} node={child} nodes={nodes} atomicTags={atomicTags} depth={depth + 1} />
+        <PreviewTreeNode key={child.id} node={child} nodes={nodes} depth={depth + 1} />
       ))}
     </div>
   );

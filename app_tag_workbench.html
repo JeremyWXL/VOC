@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>VOC智能分析引擎 - 观远数据</title>
 <link rel="icon" href="https://guandata-official-website.oss-cn-hangzhou.aliyuncs.com/assets/favicon.ico" type="image/x-icon">
 <style>
@@ -536,7 +539,9 @@
     box-shadow: 0 2px 8px rgba(24,144,255,0.3);
   }
 
-  /* Toast enhanced */
+  .app-navbar-icon-btn:hover { background: #f0f2f5; color: #1890ff; }
+
+/* Toast enhanced */
   .toast.ok { background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%); }
   .toast.err { background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%); }
   .toast.info { background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%); }
@@ -550,44 +555,284 @@
   .step:nth-child(2) { animation-delay: 0.1s; }
   .step:nth-child(3) { animation-delay: 0.2s; }
   .step:nth-child(4) { animation-delay: 0.3s; }
+
+  /* ====== APP LAYOUT: Sidebar + Navbar ====== */
+  .app-layout { display: flex; min-height: 100vh; }
+
+  /* Top Navbar */
+  .app-navbar {
+    position: fixed; top: 0; left: 0; right: 0; height: 56px;
+    background: #fff; border-bottom: 1px solid #e8e8e8;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; z-index: 100;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .app-navbar-left {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .app-navbar-logo {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 14px;
+  }
+  .app-navbar-title {
+    font-size: 15px; font-weight: 600; color: #111827; letter-spacing: 0.3px;
+  }
+  .app-navbar-right {
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  /* Left Sidebar */
+  .app-sidebar {
+    position: fixed; top: 56px; left: 0; bottom: 0; width: 200px;
+    background: #001529; z-index: 90;
+    display: flex; flex-direction: column;
+    transition: width 0.25s ease;
+    overflow: hidden;
+  }
+  .app-sidebar.collapsed { width: 64px; }
+
+  .app-sidebar-menu {
+    flex: 1; padding: 12px 0; overflow-y: auto;
+  }
+  .app-sidebar-item {
+    display: flex; align-items: center; gap: 12px;
+    height: 44px; margin: 4px 12px; padding: 0 14px;
+    border-radius: 6px; cursor: pointer; transition: all 0.2s;
+    color: rgba(255,255,255,0.65); font-size: 14px;
+    white-space: nowrap; position: relative;
+    border: none; background: transparent; width: calc(100% - 24px);
+    font-family: inherit;
+  }
+  .app-sidebar-item:hover {
+    background: rgba(24,144,255,0.12); color: #fff;
+  }
+  .app-sidebar-item.active {
+    background: rgba(24,144,255,0.18); color: #fff;
+  }
+  .app-sidebar-item.active::before {
+    content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 18px; background: #1890ff; border-radius: 0 3px 3px 0;
+  }
+  .app-sidebar-item .icon {
+    width: 20px; text-align: center; font-size: 16px; flex-shrink: 0;
+  }
+  .app-sidebar-item .label {
+    opacity: 1; transition: opacity 0.15s;
+  }
+  .app-sidebar.collapsed .app-sidebar-item { justify-content: center; padding: 0; }
+  .app-sidebar.collapsed .app-sidebar-item .label { display: none; }
+  .app-sidebar.collapsed .app-sidebar-submenu { display: none !important; }
+
+  /* Submenu */
+  .app-sidebar-submenu {
+    overflow: hidden;
+    transition: max-height 0.25s ease, opacity 0.2s ease;
+    max-height: 0;
+    opacity: 0;
+  }
+  .app-sidebar-submenu.open {
+    max-height: 200px;
+    opacity: 1;
+  }
+  .app-sidebar-subitem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 36px;
+    margin: 2px 12px 2px 24px;
+    padding: 0 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: rgba(255,255,255,0.55);
+    font-size: 13px;
+    white-space: nowrap;
+    border: none;
+    background: transparent;
+    width: calc(100% - 36px);
+    font-family: inherit;
+  }
+  .app-sidebar-subitem:hover {
+    background: rgba(24,144,255,0.1);
+    color: #fff;
+  }
+  .app-sidebar-subitem.active {
+    background: rgba(24,144,255,0.15);
+    color: #fff;
+  }
+  .app-sidebar-item .arrow {
+    margin-left: auto;
+    font-size: 11px;
+    transition: transform 0.2s;
+    color: rgba(255,255,255,0.4);
+  }
+  .app-sidebar-item.expanded .arrow {
+    transform: rotate(90deg);
+  }
+
+  .app-sidebar-footer {
+    padding: 10px; border-top: 1px solid rgba(24,144,255,0.15);
+  }
+  .app-sidebar-toggle {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; width: 100%; height: 36px;
+    border-radius: 6px; cursor: pointer; transition: all 0.2s;
+    color: rgba(255,255,255,0.55); font-size: 13px;
+    border: none; background: transparent; font-family: inherit;
+  }
+  .app-sidebar-toggle:hover {
+    background: rgba(24,144,255,0.12); color: #fff;
+  }
+  .app-sidebar.collapsed .app-sidebar-toggle .toggle-label { display: none; }
+
+  /* Main Content Area */
+  .app-main {
+    flex: 1; margin-left: 200px; margin-top: 56px;
+    padding: 20px 24px; min-height: calc(100vh - 56px);
+    transition: margin-left 0.25s ease;
+    background: #f0f2f5;
+  }
+  .app-sidebar.collapsed ~ .app-main { margin-left: 64px; }
+
+  /* Hide old brand navbar and mode-tabs */
+  .gd-navbar { display: none !important; }
+  .mode-tabs { display: none !important; }
+
+  /* Content panel wrapper */
+  .app-panel { display: none; }
+  .app-panel.active { display: block; }
+
+  /* Stat cards unified style */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px; margin-bottom: 20px;
+  }
+  .stat-card {
+    background: #fff; border-radius: 12px; padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid #e8e8e8;
+    display: flex; align-items: center; gap: 14px;
+    transition: box-shadow 0.3s, transform 0.2s;
+  }
+  .stat-card:hover {
+    box-shadow: 0 4px 12px rgba(24,144,255,0.1);
+    transform: translateY(-2px);
+  }
+  .stat-card-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .stat-card-value {
+    font-size: 24px; font-weight: 700; color: #111827; line-height: 1.2;
+  }
+  .stat-card-label {
+    font-size: 12px; color: #888; margin-top: 2px;
+  }
+
+  /* Section title bar */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 18px; font-weight: 600; color: #111827;
+  }
+  .section-desc {
+    font-size: 13px; color: #888; margin-top: 2px;
+  }
 </style>
 </head>
 <body>
-<!-- 观远品牌导航栏 -->
-<nav class="gd-navbar">
-  <div class="gd-navbar-left">
-    <a class="gd-logo" href="#">
-      <img src="/static/logo_guandata_white.png" alt="观远数据" style="height:28px;width:auto;object-fit:contain">
-      <span class="gd-logo-sub">VOC智能分析引擎</span>
-    </a>
+<!-- 顶部导航栏 -->
+<nav class="app-navbar">
+  <div class="app-navbar-left">
+    <div class="app-navbar-logo">G</div>
+    <span class="app-navbar-title">VOC智能分析引擎</span>
   </div>
-  <div class="gd-navbar-right">
-    <span class="gd-badge">AI + BI 智能分析</span>
-    <span class="gd-badge" style="background:rgba(82,196,26,0.15);color:#52c41a;border-color:rgba(82,196,26,0.25)">产品原型</span>
+  <div class="app-navbar-right">
+    <!-- Global Search -->
+    <div class="app-navbar-search" style="position:relative;">
+      <input type="text" id="globalSearch" placeholder="全局搜索..." style="padding:6px 12px 6px 32px;border:1px solid #e8e8e8;border-radius:6px;font-size:13px;width:200px;background:#f5f5f5;transition:all 0.2s;" onfocus="this.style.background='#fff';this.style.borderColor='#1890ff';this.style.width='260px';" onblur="this.style.background='#f5f5f5';this.style.borderColor='#e8e8e8';this.style.width='200px';">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8c8c8c" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </div>
+    <!-- API Status -->
+    <div class="api-box" style="display:flex;align-items:center;gap:8px;">
+      <span style="color:#8c8c8c;font-size:13px">API:</span>
+      <input type="text" id="apiBase" placeholder="默认相对路径" value="" style="border-color:#d9d9d9;padding:5px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;width:160px;">
+      <div class="status" id="apiStatus" title="点击检测连通性" style="cursor:pointer;width:10px;height:10px;border-radius:50%;background:#ccc;"></div>
+    </div>
+    <!-- Notifications -->
+    <button class="app-navbar-icon-btn" onclick="toggleNotificationPanel()" title="通知" style="position:relative;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:none;background:transparent;cursor:pointer;color:#666;transition:all 0.2s;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      <span id="notificationBadge" style="position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:#ff4d4f;display:none;"></span>
+    </button>
+    <!-- Admin/User -->
+    <button class="app-navbar-icon-btn" onclick="toggleUserMenu()" title="管理员" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:none;background:transparent;cursor:pointer;color:#666;transition:all 0.2s;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </button>
+    <div id="userMenuPanel" style="display:none;position:fixed;top:56px;right:16px;width:200px;background:#fff;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.12);border:1px solid #e8e8e8;z-index:200;padding:8px 0;">
+      <div style="padding:8px 16px;border-bottom:1px solid #f0f0f0;margin-bottom:4px;">
+        <div style="font-size:14px;font-weight:500;color:#333;">管理员</div>
+        <div style="font-size:12px;color:#888;">admin@voc.ai</div>
+      </div>
+      <button onclick="openApiConfigManager()" style="display:block;width:100%;text-align:left;padding:8px 16px;border:none;background:transparent;cursor:pointer;font-size:13px;color:#555;transition:all 0.15s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">⚙️ API 配置管理</button>
+      <button onclick="toast('个人设置开发中', 'info')" style="display:block;width:100%;text-align:left;padding:8px 16px;border:none;background:transparent;cursor:pointer;font-size:13px;color:#555;transition:all 0.15s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">👤 个人设置</button>
+      <div style="border-top:1px solid #f0f0f0;margin-top:4px;"></div>
+      <button onclick="toast('已退出登录', 'ok')" style="display:block;width:100%;text-align:left;padding:8px 16px;border:none;background:transparent;cursor:pointer;font-size:13px;color:#ff4d4f;transition:all 0.15s;" onmouseover="this.style.background='#fff1f0'" onmouseout="this.style.background='transparent'">🚪 退出登录</button>
+    </div>
   </div>
 </nav>
 
-<div class="gd-bg-pattern"></div>
-
-<div class="container" style="position:relative;z-index:1">
-  <header style="margin-bottom:20px">
-    <div class="api-box" style="margin-left:auto">
-      <span style="color:#8c8c8c;font-size:13px">API 地址:</span>
-      <input type="text" id="apiBase" placeholder="默认相对路径" value="" style="border-color:#d9d9d9">
-      <div class="status" id="apiStatus" title="点击检测连通性" style="cursor:pointer"></div>
+<!-- 左侧边栏 -->
+<aside class="app-sidebar" id="appSidebar">
+  <div class="app-sidebar-menu">
+    <button class="app-sidebar-item active" data-mode="tag" onclick="switchMode('tag')">
+      <span class="icon">🏷️</span>
+      <span class="label">打标模式</span>
+    </button>
+    <button class="app-sidebar-item has-submenu" id="libraryMenuBtn" onclick="toggleLibraryMenu(event)">
+      <span class="icon">📚</span>
+      <span class="label">标签库</span>
+      <span class="arrow">▶</span>
+    </button>
+    <div class="app-sidebar-submenu" id="librarySubmenu">
+      <button class="app-sidebar-subitem" onclick="navigateLibrary('/dashboard')">
+        <span style="font-size:13px;">🏠</span>
+        <span>标签管理工作台</span>
+      </button>
+      <button class="app-sidebar-subitem" onclick="navigateLibrary('/atomic-tags')">
+        <span style="font-size:13px;">🏷️</span>
+        <span>原子标签</span>
+      </button>
+      <button class="app-sidebar-subitem" onclick="navigateLibrary('/tag-systems')">
+        <span style="font-size:13px;">📁</span>
+        <span>标签体系管理</span>
+      </button>
     </div>
-  </header>
-
-  <!-- Mode Tabs -->
-  <div class="mode-tabs">
-    <button class="mode-tab active" data-mode="tag" onclick="switchMode('tag')">打标模式</button>
-    <button class="mode-tab" data-mode="library" onclick="switchMode('library')">🏷️ 标签库</button>
-    <button class="mode-tab" data-mode="dashboard" onclick="switchMode('dashboard')">任务看板</button>
-    <button class="mode-tab" data-mode="audit" onclick="switchMode('audit')">审核模式</button>
+    <button class="app-sidebar-item" data-mode="dashboard" onclick="switchMode('dashboard')">
+      <span class="icon">📊</span>
+      <span class="label">任务看板</span>
+    </button>
+    <button class="app-sidebar-item" data-mode="audit" onclick="switchMode('audit')">
+      <span class="icon">🔍</span>
+      <span class="label">审核模式</span>
+    </button>
   </div>
+  <div class="app-sidebar-footer">
+    <button class="app-sidebar-toggle" onclick="toggleSidebar()" title="折叠/展开侧边栏">
+      <span id="sidebarToggleIcon">◀</span>
+      <span class="toggle-label">收起侧边栏</span>
+    </button>
+  </div>
+</aside>
 
+<!-- 主内容区 -->
+<main class="app-main" id="appMain">
   <!-- Tag Mode Panel -->
-  <div id="tagModePanel">
+  <div id="tagModePanel" class="app-panel active">
     <!-- Step 1: 评论数据 -->
     <section class="step">
       <div class="step-header">
@@ -698,8 +943,9 @@
             <div id="presetTagWrap" style="margin-top:12px">
               <label style="font-size:13px;font-weight:500;color:#444;display:block;margin-bottom:6px">或从标签库选择</label>
               <div id="tagSystemSelector" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <button class="btn" onclick="switchMode('library')" id="btnSelectTagSystem" style="border:1px dashed #1890ff;color:#1890ff;background:#e6f7ff">📚 打开标签库</button>
-                <span id="selectedTagSystemName" style="font-size:13px;color:#555;display:none"></span>
+                <select id="tagSystemSelect" onchange="onTagSystemSelectChange(this)" style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;background:#fff;max-width:400px;">
+                  <option value="">-- 请选择标签体系 --</option>
+                </select>
                 <button class="btn" id="btnClearTagSystem" onclick="clearSelectedTagSystem()" style="display:none;font-size:12px;padding:4px 8px;color:#ff4d4f;border-color:#ff4d4f">清除</button>
               </div>
             </div>
@@ -758,25 +1004,21 @@
       </div>
     </section>
 
-    <!-- Step 3: LLM 配置 -->
+    <!-- Step 3: API 配置 -->
     <section class="step">
       <div class="step-header">
         <div class="step-num">3</div>
         <div>
-          <div class="step-title">LLM 配置</div>
-          <div class="step-desc">选择模型提供商并填写 API Key</div>
+          <div class="step-title">API 配置</div>
+          <div class="step-desc">选择本次打标使用的 API 配置，或手动填写</div>
         </div>
       </div>
       <div class="form-row" style="align-items:flex-end;margin-bottom:14px">
-        <div class="form-group" style="flex:2">
-          <label>API 配置选择</label>
+        <div class="form-group" style="flex:1;min-width:260px;">
+          <label>选择 API 配置</label>
           <select id="apiConfigSelect">
             <option value="">-- 手动填写 --</option>
           </select>
-        </div>
-        <div class="form-group" style="flex:1;display:flex;gap:8px">
-          <button class="btn" onclick="openApiConfigManager()" style="white-space:nowrap">⚙ 管理配置</button>
-          <button class="btn btn-primary" onclick="saveCurrentApiConfig()" style="white-space:nowrap">💾 保存当前</button>
         </div>
       </div>
       <div class="form-row">
@@ -892,7 +1134,7 @@
   </div>
 
   <!-- Audit Mode Panel -->
-  <div id="auditModePanel" style="display:none;">
+  <div id="auditModePanel" class="app-panel">
     <section class="step">
       <div class="step-header">
         <div class="step-num">🔍</div>
@@ -911,7 +1153,7 @@
   </div>
 
   <!-- Dashboard Mode Panel -->
-  <div id="dashboardModePanel" style="display:none;">
+  <div id="dashboardModePanel" class="app-panel">
     <section class="step">
       <div class="step-header">
         <div class="step-num">📊</div>
@@ -926,57 +1168,10 @@
   </div>
 
   <!-- Tag Library Panel -->
-  <div id="tagLibraryPanel" style="display:none;">
-    <section class="step">
-      <div class="step-header">
-        <div class="step-num">🏷️</div>
-        <div>
-          <div class="step-title">标签库</div>
-          <div class="step-desc">管理所有标签体系，支持预置标签、AI 生成标签和自定义标签的集中管理</div>
-        </div>
-      </div>
-
-      <!-- 操作栏 -->
-      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;background:#f6ffed;border-radius:8px;border:1px solid #b7eb8f;">
-        <input type="text" id="tagLibrarySearch" placeholder="搜索标签体系..." style="flex:1;min-width:160px;padding:8px 12px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px" oninput="renderTagLibrary()">
-        <select id="tagLibrarySceneFilter" style="padding:8px 12px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px" onchange="renderTagLibrary()">
-          <option value="">所有场景</option>
-        </select>
-        <button class="btn" onclick="toggleLibraryView()" id="btnLibraryView">☰ 列表视图</button>
-        <button class="btn btn-primary" onclick="createNewTagSystem()">➕ 新建</button>
-        <button class="btn" onclick="importTagSystemFromFile()">📥 导入</button>
-        <input type="file" id="tagLibraryImportInput" accept=".csv" style="display:none" onchange="handleTagSystemImport(this)">
-      </div>
-
-      <!-- 统计卡片 -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px;">
-        <div style="background:#fff;padding:12px 16px;border-radius:8px;border:1px solid #e8e8e8;text-align:center;">
-          <div style="font-size:24px;font-weight:700;color:#1890ff" id="libStatTotal">0</div>
-          <div style="font-size:12px;color:#888">标签体系总数</div>
-        </div>
-        <div style="background:#fff;padding:12px 16px;border-radius:8px;border:1px solid #e8e8e8;text-align:center;">
-          <div style="font-size:24px;font-weight:700;color:#52c41a" id="libStatPreset">0</div>
-          <div style="font-size:12px;color:#888">预置标签</div>
-        </div>
-        <div style="background:#fff;padding:12px 16px;border-radius:8px;border:1px solid #e8e8e8;text-align:center;">
-          <div style="font-size:24px;font-weight:700;color:#fa8c16" id="libStatCustom">0</div>
-          <div style="font-size:12px;color:#888">自定义标签</div>
-        </div>
-      </div>
-
-      <!-- 内容区 -->
-      <div id="tagLibraryContent">
-        <div id="tagLibraryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;"></div>
-        <div id="tagLibraryList" style="display:none;"></div>
-        <div id="tagLibraryEmpty" style="display:none;text-align:center;padding:60px 20px;color:#888">
-          <div style="font-size:48px;margin-bottom:12px">📭</div>
-          <div style="font-size:16px;margin-bottom:8px">暂无标签体系</div>
-          <div style="font-size:13px">点击「新建」创建空白标签体系，或在打标模式让 AI 自动生成</div>
-        </div>
-      </div>
-    </section>
+  <div id="tagLibraryPanel" class="app-panel">
+    <iframe id="tagLibraryFrame" src="/tag-library?v=2" style="width:100%;height:calc(100dvh - 100px);border:none;border-radius:0;background:transparent;"></iframe>
   </div>
-</div>
+</main>
 
 <!-- 标签编辑器弹层 -->
 <div id="tagEditorModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;padding:20px;">
@@ -1433,11 +1628,21 @@ $('#presetTagSelect').addEventListener('change', () => {
 
 // ====== 模式切换 ======
 function switchMode(mode) {
-  document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
-  $('#tagModePanel').style.display = mode === 'tag' ? 'block' : 'none';
-  $('#auditModePanel').style.display = mode === 'audit' ? 'block' : 'none';
-  $('#dashboardModePanel').style.display = mode === 'dashboard' ? 'block' : 'none';
-  $('#tagLibraryPanel').style.display = mode === 'library' ? 'block' : 'none';
+  // Update sidebar active state
+  document.querySelectorAll('.app-sidebar-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.mode === mode);
+  });
+  // Show/hide panels
+  document.querySelectorAll('.app-panel').forEach(panel => {
+    panel.classList.toggle('active', panel.id === getPanelIdByMode(mode));
+  });
+  // Collapse library submenu when switching away
+  if (mode !== 'library') {
+    const submenu = $('#librarySubmenu');
+    const btn = $('#libraryMenuBtn');
+    if (submenu) submenu.classList.remove('open');
+    if (btn) btn.classList.remove('expanded');
+  }
   if (mode === 'audit') {
     const recent = getRecentTask();
     const btn = $('#btnLoadRecent');
@@ -1453,7 +1658,70 @@ function switchMode(mode) {
     loadDashboard();
   }
   if (mode === 'library') {
-    loadTagLibrary();
+    // React tag library app handles data loading internally
+  }
+  if (mode === 'tag') {
+    loadTagSystemOptions();
+  }
+}
+
+function getPanelIdByMode(mode) {
+  const map = { tag: 'tagModePanel', audit: 'auditModePanel', dashboard: 'dashboardModePanel', library: 'tagLibraryPanel' };
+  return map[mode];
+}
+
+function toggleSidebar() {
+  const sidebar = $('#appSidebar');
+  const isCollapsed = sidebar.classList.toggle('collapsed');
+  const icon = $('#sidebarToggleIcon');
+  if (icon) icon.textContent = isCollapsed ? '▶' : '◀';
+  try { localStorage.setItem('vocSidebarCollapsed', isCollapsed ? '1' : '0'); } catch(e) {}
+}
+
+function initSidebar() {
+  try {
+    const collapsed = localStorage.getItem('vocSidebarCollapsed') === '1';
+    if (collapsed) {
+      $('#appSidebar').classList.add('collapsed');
+      const icon = $('#sidebarToggleIcon');
+      if (icon) icon.textContent = '▶';
+    }
+  } catch(e) {}
+}
+
+function toggleLibraryMenu(e) {
+  e.stopPropagation();
+  const btn = $('#libraryMenuBtn');
+  const submenu = $('#librarySubmenu');
+  const isOpen = submenu.classList.toggle('open');
+  btn.classList.toggle('expanded', isOpen);
+}
+
+function navigateLibrary(path) {
+  switchMode('library');
+  const iframe = $('#tagLibraryFrame');
+  if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage({ type: 'navigate', path }, '*');
+  }
+}
+
+function toggleNotificationPanel() {
+  toast('暂无新通知', 'info');
+}
+
+function toggleUserMenu() {
+  const panel = $('#userMenuPanel');
+  if (!panel) return;
+  const isVisible = panel.style.display === 'block';
+  panel.style.display = isVisible ? 'none' : 'block';
+  if (!isVisible) {
+    const closeHandler = (e) => {
+      if (!panel.contains(e.target) && !e.target.closest('.app-navbar-icon-btn')) {
+        panel.style.display = 'none';
+        document.removeEventListener('click', closeHandler);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', closeHandler), 10);
   }
 }
 
@@ -3362,16 +3630,66 @@ function selectTagSystem(ts) {
     $('#tagDropzone').style.display = 'block';
     clearSelectedTagSystem();
   };
-  $('#btnSelectTagSystem').style.display = 'none';
-  $('#selectedTagSystemName').style.display = 'inline';
-  $('#selectedTagSystemName').textContent = ts.name;
+  const select = $('#tagSystemSelect');
+  if (select) select.value = ts.id;
   $('#btnClearTagSystem').style.display = 'inline-block';
 }
 
 function clearSelectedTagSystem() {
-  $('#btnSelectTagSystem').style.display = 'inline-block';
-  $('#selectedTagSystemName').style.display = 'none';
+  const select = $('#tagSystemSelect');
+  if (select) select.value = '';
   $('#btnClearTagSystem').style.display = 'none';
+  tagFile = null;
+  $('#tagFileInfo').style.display = 'none';
+  $('#tagDropzone').style.display = 'block';
+}
+
+async function loadTagSystemOptions() {
+  const select = $('#tagSystemSelect');
+  if (!select) return;
+  try {
+    const res = await fetch(API() + '/api/tag-systems');
+    if (!res.ok) { console.log('API 请求失败', res.status); return; }
+    const data = await res.json();
+    const items = data.items || [];
+    const currentVal = select.value;
+    // Keep the first option
+    select.innerHTML = '<option value="">-- 请选择标签体系 --</option>';
+    items.forEach(ts => {
+      const opt = document.createElement('option');
+      opt.value = ts.id;
+      opt.textContent = ts.name + (ts.is_preset ? ' (预置)' : '');
+      select.appendChild(opt);
+    });
+    // Restore selected value if still valid
+    if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
+      select.value = currentVal;
+    }
+    console.log('[VOC] 标签体系选项已加载', items.length, '条');
+  } catch (e) {
+    console.log('加载标签体系选项失败', e);
+    toast('标签体系列表加载失败', 'err');
+  }
+}
+
+function onTagSystemSelectChange(select) {
+  const id = select.value;
+  if (!id) {
+    clearSelectedTagSystem();
+    return;
+  }
+  // Find the selected tag system from the dropdown options
+  const text = select.options[select.selectedIndex].text;
+  const name = text.replace(' (预置)', '');
+  // Fetch the full tag system data
+  fetch(API() + '/api/tag-systems/' + id)
+    .then(res => res.json())
+    .then(ts => {
+      selectTagSystem(ts);
+    })
+    .catch(err => {
+      toast('加载标签体系失败: ' + err.message, 'err');
+    });
 }
 
 async function editTagSystem(sid) {
@@ -3432,6 +3750,23 @@ async function createNewTagSystem() {
 }
 
 loadScenes();
+initSidebar();
+loadTagSystemOptions();
+
+// ====== React Tag Library iframe postMessage protocol ======
+window.addEventListener('message', (e) => {
+  const msg = e.data;
+  if (!msg || !msg.type) return;
+  if (msg.type === 'switch-mode') {
+    if (['tag', 'library', 'dashboard', 'audit'].includes(msg.mode)) {
+      switchMode(msg.mode);
+    }
+  } else if (msg.type === 'use-tag-system') {
+    selectTagSystem({ id: msg.id, name: msg.name, csv_content: '' });
+    switchMode('tag');
+    toast('已选择「' + msg.name + '」，请继续配置打标参数', 'ok');
+  }
+});
 </script>
 
 <!-- 观远品牌 Footer -->

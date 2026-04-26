@@ -1,41 +1,13 @@
 import { useLocation, useNavigate } from 'react-router';
-import { Tag, FolderTree, RefreshCw, Users, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { FC } from 'react';
 
-interface MenuItem {
+interface NavItem {
   label: string;
-  path: string;
-  icon: FC<{ size?: number; className?: string }>;
+  emoji: string;
+  action: () => void;
+  isExternal?: boolean;
 }
-
-interface MenuGroup {
-  title: string;
-  items: MenuItem[];
-}
-
-const menuGroups: MenuGroup[] = [
-  {
-    title: '标签管理',
-    items: [
-      { label: '原子标签', path: '/atomic-tags', icon: Tag },
-      { label: '标签体系', path: '/tag-systems', icon: FolderTree },
-    ],
-  },
-  {
-    title: '数据关联',
-    items: [
-      { label: '同步追踪', path: '/sync-tracking', icon: RefreshCw },
-    ],
-  },
-  {
-    title: '系统设置',
-    items: [
-      { label: '用户管理', path: '/users', icon: Users },
-      { label: '权限配置', path: '/permissions', icon: Shield },
-    ],
-  },
-];
 
 interface SidebarProps {
   collapsed: boolean;
@@ -46,77 +18,104 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '/';
-    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  // Runtime iframe detection (must be inside component to avoid build-time tree-shaking)
+  const isInIframe = typeof window !== 'undefined' && window.parent !== window;
+  if (isInIframe) return null;
+
+  const navItems: NavItem[] = [
+    {
+      label: '打标模式',
+      emoji: '🏷️',
+      action: () => {
+        window.parent.postMessage({ type: 'switch-mode', mode: 'tag' }, '*');
+      },
+      isExternal: true,
+    },
+    {
+      label: '标签库管理',
+      emoji: '📚',
+      action: () => {
+        navigate('/tag-systems');
+      },
+    },
+    {
+      label: '任务看板',
+      emoji: '📊',
+      action: () => {
+        window.parent.postMessage({ type: 'switch-mode', mode: 'dashboard' }, '*');
+      },
+      isExternal: true,
+    },
+    {
+      label: '审核模式',
+      emoji: '🔍',
+      action: () => {
+        window.parent.postMessage({ type: 'switch-mode', mode: 'audit' }, '*');
+      },
+      isExternal: true,
+    },
+  ];
+
+  const isActive = (item: NavItem) => {
+    if (item.isExternal) return false;
+    return location.pathname === '/tag-systems' || location.pathname.startsWith('/tag-system-editor');
   };
 
   return (
     <aside
       className={cn(
-        'fixed left-0 top-14 bottom-0 bg-[#1E293B] flex flex-col transition-all duration-300 z-40',
+        'fixed left-0 top-14 bottom-0 flex flex-col transition-all duration-300 z-40',
         collapsed ? 'w-16' : 'w-60'
       )}
+      style={{ backgroundColor: '#001529' }}
     >
-      {/* Menu Groups */}
+      {/* Flat Nav List */}
       <nav className="flex-1 overflow-y-auto py-3 px-2">
-        {menuGroups.map((group) => (
-          <div key={group.title} className="mb-5">
-            {!collapsed && (
-              <div className="px-3 mb-1.5 text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider">
-                {group.title}
-              </div>
-            )}
-            {collapsed && (
-              <div className="mx-auto mb-2 w-8 h-px bg-[#334155]" />
-            )}
-            <ul className="space-y-0.5">
-              {group.items.map((item) => {
-                const active = isActive(item.path);
-                const Icon = item.icon;
-                return (
-                  <li key={item.path}>
-                    <button
-                      onClick={() => navigate(item.path)}
-                      className={cn(
-                        'relative w-full flex items-center gap-3 h-10 rounded-md transition-all duration-150 group',
-                        active
-                          ? 'bg-[#334155] text-[#EFF4FF]'
-                          : 'text-[#CBD5E1] hover:bg-[#293548] hover:text-[#F1F5F9]',
-                        collapsed ? 'justify-center px-0' : 'px-3'
-                      )}
-                    >
-                      {/* Active indicator */}
-                      {active && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r bg-[#4F7BF7]" />
-                      )}
-                      <Icon
-                        size={20}
-                        className={cn(
-                          'flex-shrink-0',
-                          active ? 'text-[#4F7BF7]' : 'text-[#94A3B8] group-hover:text-[#CBD5E1]'
-                        )}
-                      />
-                      {!collapsed && (
-                        <span className="text-[13px] font-medium">{item.label}</span>
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
+        <ul className="space-y-1">
+          {navItems.map((item) => {
+            const active = isActive(item);
+            return (
+              <li key={item.label}>
+                <button
+                  onClick={item.action}
+                  className={cn(
+                    'relative w-full flex items-center gap-3 h-10 rounded transition-all duration-150 group',
+                    active
+                      ? 'bg-[#1890ff]/20'
+                      : 'hover:bg-[#1890ff]/10',
+                    collapsed ? 'justify-center px-0' : 'px-3'
+                  )}
+                  style={{
+                    color: active ? '#fff' : 'rgba(255,255,255,0.65)',
+                  }}
+                >
+                  {/* Active indicator */}
+                  {active && (
+                    <span
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r"
+                      style={{ backgroundColor: '#1890ff' }}
+                    />
+                  )}
+                  <span className="flex-shrink-0 text-base">{item.emoji}</span>
+                  {!collapsed && (
+                    <span className="text-[13px] font-medium">{item.label}</span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
 
       {/* Collapse Toggle */}
-      <div className="border-t border-[#334155] p-2">
+      <div className="border-t border-[#1890ff]/20 p-2">
         <button
           onClick={onToggle}
           className={cn(
-            'w-full flex items-center h-9 rounded-md text-[#94A3B8] hover:bg-[#293548] hover:text-[#CBD5E1] transition-all duration-150',
+            'w-full flex items-center h-9 rounded transition-all duration-150 hover:bg-[#1890ff]/10',
             collapsed ? 'justify-center' : 'justify-center gap-2'
           )}
+          style={{ color: 'rgba(255,255,255,0.65)' }}
           aria-label={collapsed ? '展开侧边栏' : '收起侧边栏'}
         >
           {collapsed ? <ChevronRight size={18} /> : (
