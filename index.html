@@ -1,0 +1,3654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>跨境电商退款分析 AI+BI 原型</title>
+  <style>
+    :root {
+      --bg: #f4f0e8;
+      --panel: rgba(255, 252, 247, 0.88);
+      --panel-strong: #fffdf9;
+      --line: rgba(107, 84, 54, 0.14);
+      --text: #261d16;
+      --muted: #73614f;
+      --soft: #9c8a77;
+      --brand: #ae5b2c;
+      --brand-deep: #7c3d1b;
+      --teal: #0f766e;
+      --red: #b5412f;
+      --amber: #d28728;
+      --green: #237b4b;
+      --shadow: 0 18px 40px rgba(62, 43, 20, 0.08);
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-sm: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(174, 91, 44, 0.14), transparent 28%),
+        radial-gradient(circle at 85% 10%, rgba(15, 118, 110, 0.12), transparent 24%),
+        linear-gradient(180deg, #fbf7f2 0%, #f2ece3 100%);
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      padding: 24px 18px;
+      background: rgba(252, 249, 244, 0.88);
+      border-right: 1px solid var(--line);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+    }
+
+    .brand {
+      padding: 18px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #fffaf2, #f7efe5);
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+    }
+
+    .brand-kicker {
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      color: var(--brand);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .brand h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .brand p,
+    .sidebar-note,
+    .nav-hint,
+    .meta-card p,
+    .section-head p,
+    .insight-main p,
+    .action-card p,
+    .sku-card p,
+    .footer-note {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .sidebar-group {
+      margin-top: 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .group-title {
+      padding: 0 10px;
+      font-size: 12px;
+      color: var(--soft);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .nav-btn {
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      padding: 9px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 180ms ease;
+      position: relative;
+    }
+
+    .nav-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-mark {
+      width: 20px;
+      height: 20px;
+      color: var(--soft);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+
+    .nav-mark svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav-btn:hover,
+    .nav-btn.active {
+      background: linear-gradient(135deg, rgba(174, 91, 44, 0.1), rgba(15, 118, 110, 0.06));
+      border-color: rgba(174, 91, 44, 0.12);
+      box-shadow: 0 6px 16px rgba(90, 60, 25, 0.06);
+    }
+
+    .nav-btn.active::before {
+      content: "";
+      position: absolute;
+      left: -12px;
+      top: 6px;
+      bottom: 6px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: var(--brand);
+    }
+
+    .nav-btn:hover .nav-mark,
+    .nav-btn.active .nav-mark {
+      color: var(--brand-deep);
+    }
+
+    .nav-btn strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 0;
+      line-height: 1.2;
+    }
+
+    .sidebar-note {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--line);
+    }
+
+    .content {
+      padding: 26px;
+      overflow: auto;
+    }
+
+    .toolbar,
+    .meta-card,
+    .card,
+    .insight-card,
+    .action-card,
+    .sku-card {
+      background: var(--panel);
+      border: 1px solid rgba(107, 84, 54, 0.1);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .toolbar {
+      padding: 18px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .toolbar-main {
+      min-width: 0;
+    }
+
+    .toolbar-title {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .toolbar-sub {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .toolbar-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .toolbar-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: rgba(174, 91, 44, 0.1);
+      color: var(--brand-deep);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .toolbar-pill.ghost {
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    .meta-card {
+      padding: 16px;
+      position: relative;
+    }
+
+    .meta-card strong {
+      display: block;
+      font-size: 13px;
+      color: var(--soft);
+      margin-bottom: 8px;
+    }
+
+    .meta-card .value {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .meta-card .delta.up { color: var(--red); }
+    .meta-card .delta.down { color: var(--green); }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .kpi-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-bottom: 18px;
+      overflow: visible;
+    }
+
+    .two-col {
+      grid-template-columns: 1.35fr 1fr;
+      margin-bottom: 18px;
+    }
+
+    .equal-two-col {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-bottom: 18px;
+    }
+
+    .card,
+    .insight-card,
+    .action-card,
+    .sku-card {
+      padding: 20px;
+      overflow: visible;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .section-head h3 {
+      margin: 0 0 6px;
+      font-size: 18px;
+    }
+
+    .section-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--brand-deep);
+      background: rgba(174, 91, 44, 0.1);
+      white-space: nowrap;
+    }
+
+    .kpi-value {
+      font-size: 34px;
+      font-weight: 800;
+      margin: 12px 0 8px;
+    }
+
+    .subline {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .subline strong {
+      color: var(--text);
+    }
+
+    .kpi-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .mini-btn,
+    .text-link-btn,
+    .tab-btn {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.88);
+      color: var(--text);
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: 160ms ease;
+    }
+
+    .mini-btn {
+      padding: 7px 12px;
+      font-weight: 700;
+    }
+
+    .text-link-btn {
+      padding: 6px 10px;
+    }
+
+    .mini-btn:hover,
+    .text-link-btn:hover,
+    .tab-btn:hover,
+    .tab-btn.active {
+      background: rgba(174, 91, 44, 0.1);
+      border-color: rgba(174, 91, 44, 0.18);
+      color: var(--brand-deep);
+    }
+
+    .popover-wrap {
+      position: relative;
+      display: inline-flex;
+      z-index: 60;
+    }
+
+    .popover-card {
+      position: absolute;
+      left: 0;
+      top: calc(100% + 10px);
+      width: 340px;
+      padding: 14px;
+      border-radius: 16px;
+      background: #fffdf9;
+      border: 1px solid rgba(107, 84, 54, 0.12);
+      box-shadow: 0 18px 36px rgba(62, 43, 20, 0.12);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(6px);
+      transition: 160ms ease;
+      z-index: 30;
+    }
+
+    .popover-wrap:hover .popover-card,
+    .popover-wrap:focus-within .popover-card {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .kpi-grid .card {
+      position: relative;
+      z-index: 1;
+    }
+
+    .kpi-grid .card:hover {
+      z-index: 80;
+    }
+
+    .popover-card h4,
+    .floating-panel h4 {
+      margin: 0 0 10px;
+      font-size: 14px;
+    }
+
+    .popover-item {
+      display: grid;
+      grid-template-columns: 1fr 72px;
+      gap: 10px;
+      padding: 9px 0;
+      border-top: 1px solid rgba(107, 84, 54, 0.08);
+      font-size: 12px;
+    }
+
+    .popover-item:first-of-type {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .chart-wrap {
+      height: 220px;
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(250, 245, 238, 0.94)),
+        repeating-linear-gradient(
+          to bottom,
+          transparent 0,
+          transparent 47px,
+          rgba(107, 84, 54, 0.08) 47px,
+          rgba(107, 84, 54, 0.08) 48px
+        );
+      border: 1px solid rgba(107, 84, 54, 0.08);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .chart-wrap svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .axis-label {
+      fill: #8d7a67;
+      font-size: 11px;
+    }
+
+    .axis-line {
+      stroke: rgba(107, 84, 54, 0.18);
+      stroke-width: 1;
+    }
+
+    .crosshair-line {
+      stroke: rgba(174, 91, 44, 0.25);
+      stroke-width: 1.5;
+      stroke-dasharray: 4 4;
+    }
+
+    .trend-point {
+      cursor: pointer;
+      transition: 160ms ease;
+    }
+
+    .trend-point:hover,
+    .trend-point.active {
+      r: 7;
+      filter: drop-shadow(0 0 8px rgba(174, 91, 44, 0.22));
+    }
+
+    .trend-tooltip {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.76);
+      border: 1px solid rgba(107, 84, 54, 0.08);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .trend-tooltip strong {
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .trend-control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .control-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .legend i {
+      width: 11px;
+      height: 11px;
+      display: inline-block;
+      border-radius: 999px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    .insight-main {
+      padding: 18px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(174, 91, 44, 0.11), rgba(15, 118, 110, 0.08));
+    }
+
+    .insight-main h4,
+    .reason-list h4,
+    .dept-list h4,
+    .action-list h4 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .status-chip.alert {
+      background: rgba(181, 65, 47, 0.12);
+      color: var(--red);
+    }
+
+    .status-chip.stable {
+      background: rgba(35, 123, 75, 0.12);
+      color: var(--green);
+    }
+
+    .reason-item,
+    .dept-item,
+    .task-row,
+    .user-row,
+    .quote,
+    .dimension-row {
+      display: grid;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .reason-item,
+    .dept-item,
+    .task-row,
+    .user-row,
+    .dimension-row {
+      padding: 12px 0;
+      border-top: 1px solid rgba(107, 84, 54, 0.09);
+    }
+
+    .reason-item:first-child,
+    .dept-item:first-child,
+    .task-row:first-child,
+    .user-row:first-child,
+    .dimension-row:first-child {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .reason-item {
+      grid-template-columns: 1.2fr 0.9fr 1.3fr;
+      gap: 10px;
+    }
+
+    .reason-detail-wrap {
+      padding: 8px 0 0;
+      border-top: 1px dashed rgba(107, 84, 54, 0.08);
+      margin-top: 8px;
+    }
+
+    .reason-subrow {
+      display: grid;
+      grid-template-columns: 120px 80px 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 8px 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .reason-subrow strong {
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    .tertiary-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tiny-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(244, 240, 232, 0.92);
+      border: 1px solid rgba(107, 84, 54, 0.08);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(107, 84, 54, 0.08);
+      overflow: hidden;
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--brand), #e9a05d);
+    }
+
+    .dept-item {
+      grid-template-columns: 110px 1fr;
+    }
+
+    .dept-tag {
+      display: inline-flex;
+      justify-content: center;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(15, 118, 110, 0.1);
+      color: var(--teal);
+    }
+
+    .dim-table,
+    .task-table,
+    .quote-list {
+      display: grid;
+      gap: 2px;
+    }
+
+    .dimension-row {
+      grid-template-columns: 160px minmax(0, 1fr) 96px;
+      gap: 14px;
+    }
+
+    .dimension-row .mini {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+
+    .dimension-label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(174, 91, 44, 0.08);
+      color: var(--brand-deep);
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .score {
+      font-size: 13px;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .score.red { color: var(--red); }
+    .score.green { color: var(--green); }
+    .score.amber { color: var(--amber); }
+
+    .action-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+    }
+
+    .action-topbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .action-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(107, 84, 54, 0.1);
+      background: rgba(255, 255, 255, 0.86);
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+      transition: 160ms ease;
+    }
+
+    .action-chip.active,
+    .action-chip:hover {
+      background: rgba(174, 91, 44, 0.12);
+      border-color: rgba(174, 91, 44, 0.18);
+      color: var(--brand-deep);
+    }
+
+    .action-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .action-metric {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(107, 84, 54, 0.08);
+    }
+
+    .action-metric strong {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .action-metric .big {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .strategy-card {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(174, 91, 44, 0.1), rgba(15, 118, 110, 0.06));
+      border: 1px solid rgba(107, 84, 54, 0.08);
+      margin-bottom: 14px;
+    }
+
+    .strategy-card h4 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+
+    .strategy-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .strategy-item {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.78);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .department-toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .department-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(107, 84, 54, 0.1);
+      background: rgba(255, 255, 255, 0.86);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 160ms ease;
+    }
+
+    .department-chip.active,
+    .department-chip:hover {
+      background: rgba(15, 118, 110, 0.1);
+      border-color: rgba(15, 118, 110, 0.16);
+      color: var(--teal);
+    }
+
+    .dispatch-board {
+      display: grid;
+      gap: 10px;
+    }
+
+    .task-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      align-items: start;
+      padding: 12px 14px 11px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid rgba(107, 84, 54, 0.08);
+      gap: 12px;
+    }
+
+    .task-row.active {
+      background: rgba(174, 91, 44, 0.1);
+      border-color: rgba(174, 91, 44, 0.16);
+    }
+
+    .task-main {
+      min-width: 0;
+      display: grid;
+      gap: 9px;
+    }
+
+    .task-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-align: center;
+      min-width: 0;
+    }
+
+    .task-col-label {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+
+    .task-second-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(72px, 1fr));
+      gap: 10px;
+      align-items: start;
+    }
+
+    .task-cause {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(15, 118, 110, 0.08);
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .task-action {
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--muted);
+      padding-left: 2px;
+    }
+
+    .task-title {
+      display: block;
+      padding-left: 2px;
+      line-height: 1.38;
+      font-size: 13px;
+    }
+
+    .task-tags {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding-left: 2px;
+    }
+
+    .task-owner {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text);
+      text-align: center;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .task-meta,
+    .user-meta {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .progress {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(107, 84, 54, 0.1);
+      overflow: hidden;
+      margin-top: 1px;
+    }
+
+    .task-side {
+      min-width: 0;
+    }
+
+    .progress > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--teal), #43b5aa);
+    }
+
+    .tag {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .tag.high {
+      background: rgba(181, 65, 47, 0.12);
+      color: var(--red);
+    }
+
+    .tag.mid {
+      background: rgba(210, 135, 40, 0.14);
+      color: #9d6205;
+    }
+
+    .tag.low {
+      background: rgba(35, 123, 75, 0.12);
+      color: var(--green);
+    }
+
+    .quote,
+    .semantic-row {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid rgba(107, 84, 54, 0.08);
+    }
+
+    .quote strong {
+      font-size: 13px;
+    }
+
+    .quote p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 13px;
+    }
+
+    .evidence-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .evidence-card {
+      display: grid;
+      grid-template-columns: 1fr 108px;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid rgba(107, 84, 54, 0.08);
+    }
+
+    .evidence-main {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .evidence-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .evidence-user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .evidence-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(174, 91, 44, 0.16), rgba(15, 118, 110, 0.12));
+      color: var(--brand-deep);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+
+    .evidence-user-meta {
+      min-width: 0;
+      display: grid;
+      gap: 2px;
+    }
+
+    .evidence-user-name {
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .evidence-user-sub {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.25;
+    }
+
+    .evidence-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(15, 118, 110, 0.08);
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .evidence-text {
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .evidence-thumbs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      align-content: start;
+    }
+
+    .evidence-thumb {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 10px;
+      background-size: cover;
+      background-position: center;
+      border: 1px solid rgba(107, 84, 54, 0.08);
+      background-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .recommend-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .validation-card {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(107, 84, 54, 0.08);
+    }
+
+    .validation-card strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .validation-card p {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .insight-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .insight-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(107, 84, 54, 0.08);
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .chip-note {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .insight-chip.active {
+      background: rgba(174, 91, 44, 0.14);
+      border-color: rgba(174, 91, 44, 0.2);
+      color: var(--brand-deep);
+    }
+
+    .semantic-table {
+      display: grid;
+      gap: 10px;
+      max-height: 430px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .semantic-head,
+    .semantic-row {
+      display: grid;
+      grid-template-columns: 1.65fr 0.82fr 0.82fr 1fr 0.6fr 0.55fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .semantic-head {
+      padding: 0 4px 2px;
+      color: var(--soft);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .semantic-comment {
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .semantic-meta {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .mini-tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(15, 118, 110, 0.08);
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .mini-tag.reason-tag {
+      background: rgba(174, 91, 44, 0.1);
+      color: var(--brand-deep);
+    }
+
+    .reason-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .reason-count {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .floating-panel {
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(107, 84, 54, 0.08);
+    }
+
+    .floating-panel[hidden] {
+      display: none;
+    }
+
+    .sample-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .sample-item {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(244, 240, 232, 0.72);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .dimension-toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .tab-btn {
+      padding: 7px 12px;
+      font-weight: 700;
+    }
+
+    .dim-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .dim-group-row,
+    .dim-subtab-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .dim-subtab-row {
+      margin-top: -2px;
+    }
+
+    .subtab-btn {
+      border: 1px solid rgba(107, 84, 54, 0.1);
+      background: rgba(244, 240, 232, 0.8);
+      color: var(--muted);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 11px;
+      cursor: pointer;
+      transition: 160ms ease;
+    }
+
+    .subtab-btn.active,
+    .subtab-btn:hover {
+      background: rgba(15, 118, 110, 0.1);
+      color: var(--teal);
+      border-color: rgba(15, 118, 110, 0.14);
+    }
+
+    .dim-grid-head,
+    .dim-grid-row {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr 0.9fr 0.8fr 0.6fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .dim-grid-head {
+      padding: 0 4px 2px;
+      color: var(--soft);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .dim-grid-row {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid rgba(107, 84, 54, 0.08);
+      font-size: 12px;
+    }
+
+    .heatmap-card {
+      padding: 20px;
+      background: var(--panel);
+      border: 1px solid rgba(107, 84, 54, 0.1);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .heatmap-toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .heatmap-grid {
+      display: grid;
+      grid-template-columns: 150px repeat(6, minmax(0, 1fr));
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .heatmap-head,
+    .heatmap-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 30px;
+    }
+
+    .heatmap-label {
+      justify-content: flex-start;
+      padding-left: 6px;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .heat-cell {
+      min-height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      transition: 160ms ease;
+      border: 1px solid rgba(107, 84, 54, 0.08);
+      background: rgba(244, 240, 232, 0.92);
+    }
+
+    .heat-cell:hover,
+    .heat-cell.active {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(62, 43, 20, 0.1);
+      outline: 2px solid rgba(174, 91, 44, 0.22);
+    }
+
+    .heatmap-note {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(107, 84, 54, 0.08);
+    }
+
+    .insight-detail {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.76);
+      border: 1px solid rgba(107, 84, 54, 0.08);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .dim-name {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .confidence {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--brand-deep);
+      text-align: right;
+    }
+
+    .sku-hero {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 18px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .sku-card .sku-image {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 22px;
+      background:
+        linear-gradient(145deg, rgba(174, 91, 44, 0.18), rgba(255, 255, 255, 0.9)),
+        url("https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=500&q=80") center/cover;
+      border: 1px solid rgba(107, 84, 54, 0.12);
+    }
+
+    .sku-title {
+      font-size: 30px;
+      margin: 0 0 10px;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.76);
+      border: 1px solid var(--line);
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 1200px) {
+      .toolbar,
+      .two-col,
+      .action-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .kpi-grid,
+      .equal-two-col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 960px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: relative;
+        height: auto;
+      }
+
+      .content {
+        padding: 16px;
+      }
+
+      .toolbar {
+        padding: 16px;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .toolbar-actions {
+        justify-content: flex-start;
+      }
+
+      .sku-hero {
+        grid-template-columns: 1fr;
+      }
+
+      .dimension-row {
+        grid-template-columns: 1fr;
+      }
+
+      .semantic-head,
+      .semantic-row,
+      .dim-grid-head,
+      .dim-grid-row {
+        grid-template-columns: 1fr;
+      }
+
+      .recommend-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .heatmap-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .task-row {
+        grid-template-columns: 1fr;
+      }
+
+      .task-second-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-kicker">Refund Ops</div>
+        <h1>退款全链路分析助手</h1>
+        <div class="brand-subtitle">AI + BI Business System</div>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="group-title">经营总览</div>
+        <button class="nav-btn active" data-view="dashboard">
+          <span class="nav-head">
+            <span class="nav-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 15V9"/><path d="M12 15V5"/><path d="M17 15v-3"/></svg>
+            </span>
+            <strong>大盘追踪</strong>
+          </span>
+        </button>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="group-title">品类专题</div>
+        <button class="nav-btn" data-view="coat">
+          <span class="nav-head">
+            <span class="nav-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M9 4l-2 3-3 2 2 4v7h12v-7l2-4-3-2-2-3-3 2z"/></svg>
+            </span>
+            <strong>外套分析</strong>
+          </span>
+        </button>
+        <button class="nav-btn" data-view="sweater">
+          <span class="nav-head">
+            <span class="nav-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M8 5l-2 3-2 1 2 4v7h12v-7l2-4-2-1-2-3-2 2h-4z"/><path d="M10 12h4"/></svg>
+            </span>
+            <strong>毛衣分析</strong>
+          </span>
+        </button>
+        <button class="nav-btn" data-view="boots">
+          <span class="nav-head">
+            <span class="nav-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M8 4v8l2 3h7a3 3 0 0 1 3 3v2H7a3 3 0 0 1-3-3v-1h5l-1-4V4z"/></svg>
+            </span>
+            <strong>靴子分析</strong>
+          </span>
+        </button>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="group-title">商品专题</div>
+        <button class="nav-btn" data-view="sku">
+          <span class="nav-head">
+            <span class="nav-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 4h10l3 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/><path d="M9 10h6"/><path d="M9 14h6"/></svg>
+            </span>
+            <strong>单款诊断</strong>
+          </span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="content" id="app"></main>
+  </div>
+
+  <script>
+    const BOOT_THUMB_ANKLE = "linear-gradient(145deg, rgba(160, 138, 113, 0.18), rgba(255,255,255,0.22)), url('https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=320&q=80')";
+    const BOOT_THUMB_TALL = "linear-gradient(145deg, rgba(183, 147, 119, 0.16), rgba(255,255,255,0.22)), url('https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?auto=format&fit=crop&w=320&q=80')";
+    const BOOT_THUMB_SNOW = "linear-gradient(145deg, rgba(174, 91, 44, 0.14), rgba(255,255,255,0.22)), url('https://images.unsplash.com/photo-1514996937319-344454492b37?auto=format&fit=crop&w=320&q=80')";
+    const BOOT_THUMB_BOX = "linear-gradient(145deg, rgba(174, 91, 44, 0.12), rgba(255,255,255,0.22)), url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=320&q=80')";
+
+    const pageData = {
+      dashboard: {
+        eyebrow: "全局经营视角",
+        title: "退款大盘追踪：识别异常、归因原因、下发动作、验证效果",
+        desc: "面向经营层统一追踪近 90 天退款趋势、损失规模和高风险商品。AI 结合退货评论、月度货号表现、页面评分和优化记录，自动给出异常判断、原因聚类以及跨部门整改建议。",
+        meta: [
+          { label: "分析口径", value: "全站总览", note: "渠道 + 品类 + 货号 + 用户" },
+          { label: "AI 打标覆盖", value: "92.4%", note: "低置信度评论进入人工复核池" },
+          { label: "整改任务", value: "28 项", note: "11 项已完成，8 项验证有效" },
+          { label: "本周异常款", value: "14 款", note: "高于上周 3 款" }
+        ],
+        flow: ["数据层", "AI 评论打标", "BI 指标追踪", "业务动作派发", "30 天效果复盘"],
+        kpis: [
+          {
+            title: "综合退款率",
+            value: "11.8%",
+            badge: "对比上月 +1.9pct",
+            note: "去年同期 9.7%，已连续 3 周高于阈值 10.5%"
+          },
+          {
+            title: "退款损失金额",
+            value: "¥4.26M",
+            badge: "对比上月 +18.6%",
+            note: "逆向物流与无法二销商品是主要损失来源"
+          },
+          {
+            title: "AI 识别高风险货号",
+            value: "37",
+            badge: "较上月 +9",
+            note: "其中 15 款集中在秋冬服饰，优先治理"
+          }
+        ],
+        trend: {
+          days: ["01", "10", "20", "30", "40", "50", "60", "70", "80", "90"],
+          refundRate: [8.8, 9.1, 9.5, 10.2, 10.8, 11.3, 12.4, 12.1, 11.7, 11.8],
+          loss: [250, 268, 280, 298, 320, 346, 392, 380, 365, 426]
+        },
+        insight: {
+          status: "alert",
+          summary: "退款率处于异常抬升区间，增幅主要来自毛衣与靴子两个品类，且问题并非单一渠道波动，而是“尺码偏差 + 页面描述不符 + 局部质量投诉”叠加所致。",
+          reasons: [
+            { label: "尺码问题", value: 31, width: 31 },
+            { label: "质量问题", value: 24, width: 24 },
+            { label: "描述不符", value: 18, width: 18 },
+            { label: "颜色差异", value: 14, width: 14 },
+            { label: "物流问题", value: 9, width: 9 },
+            { label: "其他主观原因", value: 4, width: 4 }
+          ],
+          departments: [
+            { team: "技术/算法", text: "提高评论标签置信度阈值，对“面料不喜欢”和“描述不符”做细粒度拆分，避免合并失真。" },
+            { team: "页面运营", text: "优先更新高流量款的尺码表、材质说明和颜色实拍图，减少用户预期偏差。" },
+            { team: "品控/供应链", text: "对 Top 风险款抽检缝线、面料回弹和鞋底胶水问题，并同步供应商批次排查。" },
+            { team: "客服运营", text: "对高频退货用户补充分层策略，降低无效逆向物流消耗。" }
+          ]
+        },
+        dimensions: {
+          title: "退款指标拆解",
+          badge: "渠道 / 品类 / 货号 / 用户",
+          rows: [
+            { dim: "美国站", detail: "退款率 12.6%，高于均值 0.8pct；毛衣与靴子贡献 62% 异常", risk: "高风险", score: "red" },
+            { dim: "毛衣", detail: "面料不符 + 起球标签占 39%，页面评分波动明显", risk: "需治理", score: "red" },
+            { dim: "货号 RC6487", detail: "尺码偏小与颜色不喜欢并存，近 30 天退款率 17.4%", risk: "优先跟进", score: "red" },
+            { dim: "高退货用户", detail: "90 天内退款 5 次以上用户占损失金额 14%", risk: "可策略分层", score: "amber" }
+          ]
+        },
+        actions: {
+          tasks: [
+            { name: "毛衣类尺码表与模特试穿信息统一改版", owner: "页面运营", priority: "high", progress: 78, eta: "4 月 30 日" },
+            { name: "靴子高风险批次胶水与鞋盒破损复检", owner: "品控中心", priority: "high", progress: 52, eta: "5 月 2 日" },
+            { name: "尺码标签低置信度样本回流复核", owner: "数据算法", priority: "mid", progress: 66, eta: "4 月 29 日" },
+            { name: "高退货用户免运费策略分层试点", owner: "客服运营", priority: "mid", progress: 41, eta: "5 月 6 日" }
+          ],
+          validations: [
+            { title: "已验证有效", body: "外套品类在补充版型说明后，近 14 天“描述不符”标签占比下降 3.4pct。" },
+            { title: "待观察", body: "靴子物流包装策略刚上线 5 天，当前仅看到破损相关退款申请下降 9 单。" },
+            { title: "知识沉淀", body: "系统已沉淀 12 条“原因 → 策略 → 验证”模板，可直接复用于新异常款。" }
+          ],
+          quotes: [
+            { tag: "尺码问题", user: "Mia_H", market: "美国站", date: "04-24", text: "毛衣整体偏小，肩宽和胸围都紧，和之前买的同站点尺码不一致。", photos: ["linear-gradient(145deg, rgba(174, 91, 44, 0.16), rgba(255,255,255,0.3)), url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=240&q=80')"] },
+            { tag: "质量问题", user: "Olivia_T", market: "英国站", date: "04-22", text: "靴子的鞋底边缘有开胶，收到时鞋盒也有轻微压损。", photos: [BOOT_THUMB_ANKLE] },
+            { tag: "描述不符", user: "Sienna_L", market: "欧洲站", date: "04-20", text: "外套详情页写的是厚实保暖，实物更像薄款风衣，和预期落差很大。", photos: ["linear-gradient(145deg, rgba(198, 176, 155, 0.26), rgba(255,255,255,0.3)), url('https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=240&q=80')"] },
+            { tag: "颜色差异", user: "Chloe_B", market: "美国站", date: "04-18", text: "页面是偏奶白色，收到的更黄一些，拍照和实物色差挺明显。", photos: ["linear-gradient(145deg, rgba(183, 147, 119, 0.2), rgba(255,255,255,0.3)), url('https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=240&q=80')"] }
+          ]
+        }
+      },
+      coat: {
+        eyebrow: "品类分析 · 外套",
+        title: "外套退款追踪：聚焦版型厚薄感、页面承诺与实际体验偏差",
+        desc: "将大盘视角切换到外套品类后，系统自动收缩为渠道、货号、用户三个拆解视角，并基于该品类近 90 天表现输出专属治理动作。",
+        meta: [
+          { label: "品类 GMV", value: "¥18.2M", note: "近 90 天" },
+          { label: "品类退款率", value: "9.4%", note: "低于大盘 2.4pct" },
+          { label: "主异常原因", value: "描述不符", note: "厚薄感、长度、版型差异" },
+          { label: "问题货号", value: "9 款", note: "3 款需要加急治理" }
+        ],
+        flow: ["品类画像", "AI 原因聚类", "高风险货号定位", "动作派发", "效果验证"],
+        kpis: [
+          { title: "品类退款率", value: "9.4%", badge: "对比上月 +0.6pct", note: "去年同期 8.9%" },
+          { title: "高风险货号占比", value: "13.2%", badge: "对比上月 +2.1pct", note: "集中于春秋薄外套" },
+          { title: "可通过页面优化改善的退款", value: "41%", badge: "AI 推断", note: "主要是厚薄感和版型描述" }
+        ],
+        trend: {
+          days: ["01", "10", "20", "30", "40", "50", "60", "70", "80", "90"],
+          refundRate: [7.6, 7.9, 8.1, 8.5, 8.8, 9.0, 9.6, 9.3, 9.1, 9.4],
+          loss: [120, 128, 132, 141, 152, 160, 176, 168, 164, 171]
+        },
+        insight: {
+          status: "stable",
+          summary: "外套品类整体可控，但轻薄款和长款风衣出现局部异常。AI 判断并非质量大面问题，而是页面展示与用户穿着预期偏差，属于可快速优化的品类。",
+          reasons: [
+            { label: "描述不符", value: 33, width: 33 },
+            { label: "尺码问题", value: 26, width: 26 },
+            { label: "质量问题", value: 17, width: 17 },
+            { label: "颜色差异", value: 13, width: 13 },
+            { label: "物流问题", value: 7, width: 7 },
+            { label: "其他", value: 4, width: 4 }
+          ],
+          departments: [
+            { team: "页面运营", text: "增加“厚薄指数”“上身长度示意”和不同身高模特展示，先覆盖 Top 20 流量款。" },
+            { team: "商品企划", text: "对描述不符集中货号追加详情页卖点校对，避免“保暖”“修身”等绝对化表达。" },
+            { team: "客服团队", text: "对轻薄外套上线购前咨询话术，主动提示版型与适穿季节。" }
+          ]
+        },
+        dimensions: {
+          title: "品类拆解",
+          badge: "渠道 / 货号 / 用户",
+          rows: [
+            { dim: "美国站", detail: "风衣退货集中，长度和厚薄感反馈明显", risk: "重点看页面", score: "amber" },
+            { dim: "货号 CT8821", detail: "页面写“冬季保暖”，评论多反馈偏薄", risk: "需改文案", score: "red" },
+            { dim: "货号 CT9014", detail: "S/M 码版型偏窄，加州与德州用户反馈较多", risk: "需校尺码", score: "red" },
+            { dim: "高价值新客", detail: "首次购买外套用户更依赖详情页信息", risk: "值得精细化", score: "green" }
+          ]
+        },
+        actions: {
+          tasks: [
+            { name: "外套详情页新增厚薄感与模特身高说明", owner: "页面运营", priority: "high", progress: 85, eta: "4 月 28 日" },
+            { name: "CT9014 尺码建议从“标准”改为“偏修身”", owner: "商品企划", priority: "mid", progress: 62, eta: "4 月 30 日" },
+            { name: "首购人群购前咨询脚本更新", owner: "客服运营", priority: "low", progress: 46, eta: "5 月 3 日" }
+          ],
+          validations: [
+            { title: "动作优先级", body: "外套类问题以低成本页面优化为先，暂不建议直接换供应商。" },
+            { title: "预期收益", body: "若描述不符标签下降 20%，可带动品类退款率回落约 0.7pct。" },
+            { title: "复盘节点", body: "建议在 5 月 15 日复盘优化货号的点击转化和退款率联动变化。" }
+          ],
+          quotes: [
+            { tag: "描述不符", user: "Harper_S", market: "美国站", date: "04-23", text: "这件风衣实物比页面看起来薄很多，更适合春天，不像详情说的那样保暖。", photos: ["linear-gradient(145deg, rgba(174, 91, 44, 0.16), rgba(255,255,255,0.3)), url('https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=240&q=80')"] },
+            { tag: "尺码问题", user: "Ava_W", market: "欧洲站", date: "04-21", text: "肩膀偏紧，袖长也比我预期短一点，M 码穿着不够舒服。", photos: ["linear-gradient(145deg, rgba(196, 165, 138, 0.2), rgba(255,255,255,0.3)), url('https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=240&q=80')"] },
+            { tag: "颜色差异", user: "Ella_G", market: "美国站", date: "04-17", text: "燕麦色实物更灰，没有图里那么干净柔和。", photos: ["linear-gradient(145deg, rgba(160, 138, 113, 0.2), rgba(255,255,255,0.3)), url('https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=240&q=80')"] }
+          ]
+        }
+      },
+      sweater: {
+        eyebrow: "品类分析 · 毛衣",
+        title: "毛衣退款追踪：面料感知、起球投诉与尺码偏差成为核心矛盾",
+        desc: "毛衣是当前大盘异常的重要贡献项。系统以评论语义标签为核心，将“面料不喜欢”“起球”“太小”拆解到货号和渠道层，支持快速锁定问题批次。",
+        meta: [
+          { label: "品类 GMV", value: "¥22.6M", note: "近 90 天" },
+          { label: "品类退款率", value: "14.1%", note: "高于大盘 2.3pct" },
+          { label: "异常渠道", value: "美国站", note: "面料预期偏差最明显" },
+          { label: "行动任务", value: "11 项", note: "其中 4 项已落地" }
+        ],
+        flow: ["评论打标", "原因聚类", "高风险货号", "责任部门", "效果验证"],
+        kpis: [
+          { title: "品类退款率", value: "14.1%", badge: "对比上月 +2.4pct", note: "处于高风险预警区间" },
+          { title: "尺码问题占比", value: "34%", badge: "AI 标签", note: "主要集中在 S/M 码和修身款" },
+          { title: "面料相关投诉", value: "27%", badge: "对比上月 +6pct", note: "页面材质表达与实物触感偏差较大" }
+        ],
+        trend: {
+          days: ["01", "10", "20", "30", "40", "50", "60", "70", "80", "90"],
+          refundRate: [9.8, 10.6, 11.1, 12.2, 12.7, 13.4, 14.6, 14.9, 14.2, 14.1],
+          loss: [138, 156, 172, 184, 206, 220, 242, 251, 236, 244]
+        },
+        insight: {
+          status: "alert",
+          summary: "毛衣品类的异常具备明显共性，不是单一 SKU 偶发问题。AI 判断“面料触感不及预期 + 尺码偏小 + 起球”构成主要退款链路，需要页面、版型和品控联合治理。",
+          reasons: [
+            { label: "尺码问题", value: 34, width: 34 },
+            { label: "面料/质量", value: 29, width: 29 },
+            { label: "描述不符", value: 16, width: 16 },
+            { label: "颜色差异", value: 11, width: 11 },
+            { label: "物流问题", value: 6, width: 6 },
+            { label: "其他", value: 4, width: 4 }
+          ],
+          departments: [
+            { team: "设计/版型", text: "对加州、德州销量高的修身毛衣统一复核胸围与肩宽放量，优先修正 S/M 码建议。" },
+            { team: "页面运营", text: "把“soft knit”“thick sweater”等描述拆成更具体的材质感知说明，减少误导。" },
+            { team: "品控中心", text: "补充起球和洗后变形抽检，形成毛衣品类专项质检清单。" }
+          ]
+        },
+        dimensions: {
+          title: "品类拆解",
+          badge: "渠道 / 货号 / 用户",
+          rows: [
+            { dim: "美国站", detail: "用户对面料触感预期更高，面料不喜欢占比 31%", risk: "高风险", score: "red" },
+            { dim: "货号 SW4820", detail: "S 码退货明显偏高，评论集中在“太小”“太紧”", risk: "需改尺码", score: "red" },
+            { dim: "货号 SW5209", detail: "起球与线头问题在同批次集中爆发", risk: "需抽检", score: "red" },
+            { dim: "回购老客", detail: "对颜色偏差容忍度较高，但对面料差异更敏感", risk: "可分层运营", score: "amber" }
+          ]
+        },
+        actions: {
+          tasks: [
+            { name: "毛衣 Top 款尺码表和试穿建议重做", owner: "设计/版型", priority: "high", progress: 73, eta: "5 月 1 日" },
+            { name: "页面新增材质触感和弹力说明", owner: "页面运营", priority: "high", progress: 68, eta: "4 月 30 日" },
+            { name: "SW5209 批次起球专项复检", owner: "品控中心", priority: "high", progress: 39, eta: "5 月 4 日" },
+            { name: "高价值用户退款回访并补录标签", owner: "客服运营", priority: "mid", progress: 55, eta: "5 月 2 日" }
+          ],
+          validations: [
+            { title: "复盘重点", body: "毛衣优化不能只盯退款率，还需要同步看页面转化率是否受影响。" },
+            { title: "预期收益", body: "若尺码问题下降 15%，单品平均退款损失可减少约 11% 至 13%。" },
+            { title: "方法论沉淀", body: "系统建议将毛衣建立为“面料预期偏差型”治理模板，便于复用到针织衫品类。" }
+          ],
+          quotes: [
+            { tag: "尺码问题", user: "Nora_J", market: "美国站", date: "04-22", text: "这件毛衣比预想小，胸围和袖口都紧，建议至少买大一码。", photos: ["linear-gradient(145deg, rgba(174, 91, 44, 0.16), rgba(255,255,255,0.3)), url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=240&q=80')"] },
+            { tag: "面料/质量", user: "Lily_C", market: "欧洲站", date: "04-19", text: "面料摸起来偏硬，穿了一次就有轻微起球，没有图片里看起来那么柔软。", photos: ["linear-gradient(145deg, rgba(198, 176, 155, 0.26), rgba(255,255,255,0.3)), url('https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=240&q=80')"] },
+            { tag: "描述不符", user: "Bella_Q", market: "美国站", date: "04-17", text: "详情页写厚实保暖，但收到后更像薄针织衫，和冬季场景不匹配。", photos: ["linear-gradient(145deg, rgba(183, 147, 119, 0.2), rgba(255,255,255,0.3)), url('https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=240&q=80')"] }
+          ]
+        }
+      },
+      boots: {
+        eyebrow: "品类分析 · 靴子",
+        title: "靴子退款追踪：脚感、颜色偏差与包装履约共同影响退款表现",
+        desc: "靴子品类问题更复杂，既有尺码和脚感问题，也夹杂颜色偏差和物流包装破损。系统把商品本身问题与履约问题分离，便于不同部门分别承接。",
+        meta: [
+          { label: "品类 GMV", value: "¥16.8M", note: "近 90 天" },
+          { label: "品类退款率", value: "15.6%", note: "高于大盘 3.8pct" },
+          { label: "物流相关占比", value: "12%", note: "鞋盒破损与挤压变形" },
+          { label: "优先货号", value: "7 款", note: "集中在新款短靴" }
+        ],
+        flow: ["SKU 风险评分", "评论与物流归因", "责任拆分", "行动执行", "验证复盘"],
+        kpis: [
+          { title: "品类退款率", value: "15.6%", badge: "对比上月 +1.7pct", note: "连续两周高于阈值" },
+          { title: "颜色差异投诉", value: "21%", badge: "AI 标签", note: "棕色系、酒红色系最明显" },
+          { title: "物流破损退款", value: "12%", badge: "渠道履约问题", note: "美国站 FBA 回仓问题偏多" }
+        ],
+        trend: {
+          days: ["01", "10", "20", "30", "40", "50", "60", "70", "80", "90"],
+          refundRate: [11.2, 11.8, 12.3, 13.0, 13.9, 14.4, 15.1, 15.8, 15.5, 15.6],
+          loss: [144, 150, 162, 171, 188, 205, 219, 231, 226, 233]
+        },
+        insight: {
+          status: "alert",
+          summary: "靴子品类的退款由商品体验和履约体验双重驱动。AI 判断短期应分两条线推进：一条处理脚感和颜色偏差，另一条处理鞋盒与包装破损。",
+          reasons: [
+            { label: "尺码/脚感", value: 29, width: 29 },
+            { label: "颜色差异", value: 21, width: 21 },
+            { label: "质量问题", value: 19, width: 19 },
+            { label: "物流问题", value: 12, width: 12 },
+            { label: "描述不符", value: 11, width: 11 },
+            { label: "其他", value: 8, width: 8 }
+          ],
+          departments: [
+            { team: "页面运营", text: "对棕色、酒红色靴款补充自然光实拍图，弱化滤镜差异。" },
+            { team: "设计/商品", text: "更新脚背高、筒围和鞋垫软硬度描述，优化脚感预期。" },
+            { team: "物流履约", text: "针对鞋盒角损和挤压变形，调整外箱加固和填充物标准。" }
+          ]
+        },
+        dimensions: {
+          title: "品类拆解",
+          badge: "渠道 / 货号 / 用户",
+          rows: [
+            { dim: "美国站", detail: "FBA 退货破损与颜色差异叠加，退款率最高", risk: "优先治理", score: "red" },
+            { dim: "货号 BT3342", detail: "脚背偏紧，退货理由多为“穿着不舒适”", risk: "需改脚感描述", score: "red" },
+            { dim: "货号 BT4107", detail: "深棕色实物偏红，颜色不喜欢标签占比 24%", risk: "需补实拍", score: "amber" },
+            { dim: "首次购鞋用户", detail: "更依赖图文说明，对脚感信息敏感", risk: "值得细分", score: "green" }
+          ]
+        },
+        actions: {
+          tasks: [
+            { name: "短靴系列补充自然光实拍图", owner: "页面运营", priority: "high", progress: 64, eta: "4 月 30 日" },
+            { name: "BT3342 鞋垫和脚背描述修正", owner: "商品企划", priority: "mid", progress: 58, eta: "5 月 1 日" },
+            { name: "鞋盒加固方案上线美国站仓", owner: "物流履约", priority: "high", progress: 47, eta: "5 月 5 日" }
+          ],
+          validations: [
+            { title: "动作拆分原则", body: "商品体验类问题由商品和页面承接，履约破损类问题由物流承接，避免责任不清。" },
+            { title: "观察指标", body: "建议同时跟踪颜色差异标签占比、FBA 回仓可售率和评论星级变化。" },
+            { title: "预期收益", body: "若包装破损下降 30%，可直接改善逆向物流成本占比约 0.4pct。" }
+          ],
+          quotes: [
+            { tag: "尺码/脚感", user: "Zoey_F", market: "美国站", date: "04-24", text: "脚背位置很紧，穿了一会儿就不舒服，尺码看起来正常但脚感偏小。", photos: [BOOT_THUMB_SNOW] },
+            { tag: "颜色差异", user: "Ruby_N", market: "欧洲站", date: "04-21", text: "深棕色实物偏红，和页面展示差很多，所以直接申请退货。", photos: [BOOT_THUMB_TALL] },
+            { tag: "物流问题", user: "Hannah_Y", market: "美国站", date: "04-18", text: "鞋盒到手已经压坏，靴筒也有挤压折痕，虽然鞋子没坏但观感很差。", photos: [BOOT_THUMB_BOX, BOOT_THUMB_ANKLE] }
+          ]
+        }
+      },
+      sku: {
+        eyebrow: "单款分析 · RC6487",
+        title: "单款分析：货号 RC6487 的退款表现、评论语义与整改动作闭环",
+        desc: "样例数据中 `ads_商品退货评论.xlsx` 可见 RC6487 出现“颜色不喜欢”“面料不喜欢”“太小”“与描述不符”等多种退货反馈。原型将这些语义标签结构化，并映射到具体动作与验证计划。",
+        meta: [
+          { label: "所属品类", value: "背心 / 吊带", note: "美国站为主" },
+          { label: "近 30 天退款率", value: "17.4%", note: "高于品类均值 5.8pct" },
+          { label: "AI 原因浓度", value: "84%", note: "4 个主标签覆盖大多数评论" },
+          { label: "已派发动作", value: "5 项", note: "2 项已完成" }
+        ],
+        flow: ["单款检索", "评论聚类", "维度拆解", "动作派发", "复盘验证"],
+        kpis: [
+          { title: "退款率", value: "17.4%", badge: "近 30 天", note: "异常偏高，需立即跟进" },
+          { title: "尺码偏小相关", value: "28%", badge: "AI 评论标签", note: "以紧身和偏短反馈为主" },
+          { title: "描述/颜色偏差", value: "31%", badge: "AI 评论标签", note: "颜色与材质预期偏差明显" }
+        ],
+        trend: {
+          days: ["01", "10", "20", "30", "40", "50", "60", "70", "80", "90"],
+          refundRate: [9.1, 10.4, 11.7, 12.8, 13.9, 15.2, 16.4, 17.0, 17.2, 17.4],
+          loss: [16, 18, 21, 24, 28, 31, 34, 37, 39, 42]
+        },
+        insight: {
+          status: "alert",
+          summary: "RC6487 属于典型的“预期偏差型异常款”。用户并非集中抱怨严重质量问题，而是因为颜色、面料触感、尺码感知与页面承诺存在偏差而触发退款，说明该款优先应从页面与尺码建议入手，而不是直接下架。",
+          reasons: [
+            { label: "颜色不喜欢", value: 19, width: 19 },
+            { label: "面料不喜欢", value: 17, width: 17 },
+            { label: "太小", value: 28, width: 28 },
+            { label: "与描述不符", value: 12, width: 12 },
+            { label: "款式不喜欢", value: 9, width: 9 },
+            { label: "无理由/其他", value: 15, width: 15 }
+          ],
+          departments: [
+            { team: "页面运营", text: "更新颜色实拍与面料近景，减少“网站看起来更好”的预期落差。" },
+            { team: "商品企划", text: "调整该款尺码建议与适穿说明，明确提示偏紧、建议大一码。" },
+            { team: "客服运营", text: "在售前 FAQ 中加入材质手感与版型提示，降低误购。" }
+          ]
+        },
+        dimensions: {
+          title: "单款维度拆解",
+          badge: "渠道 / 评论 / 用户",
+          rows: [
+            { dim: "美国站", detail: "占该款退款评论 82%，颜色与尺码反馈最集中", risk: "主战场", score: "red" },
+            { dim: "评论语义", detail: "“颜色和面料不符合预期”“太小了”“网站让质量看起来更好”", risk: "预期偏差", score: "red" },
+            { dim: "新客用户", detail: "首次购买该品牌的用户退款占比更高", risk: "需前置提示", score: "amber" },
+            { dim: "高点赞评论", detail: "负面评论更容易被后续用户参考并放大风险", risk: "需优先处理", score: "amber" }
+          ]
+        },
+        actions: {
+          tasks: [
+            { name: "RC6487 详情页新增真实色卡与面料近景", owner: "页面运营", priority: "high", progress: 92, eta: "4 月 27 日" },
+            { name: "RC6487 尺码建议改为“偏紧建议大一码”", owner: "商品企划", priority: "high", progress: 74, eta: "4 月 29 日" },
+            { name: "售前问答增加“适穿人群/胸围建议”", owner: "客服运营", priority: "mid", progress: 61, eta: "4 月 30 日" }
+          ],
+          validations: [
+            { title: "短期验证", body: "上线 7 天内先观察新增差评数量与退款申请量是否回落。" },
+            { title: "中期验证", body: "30 天对比优化前后退款率、页面转化率和颜色相关投诉占比。" },
+            { title: "迁移价值", body: "若验证有效，可复用到同类背心/吊带款的“颜色 + 面料 + 尺码”治理模板。" }
+          ],
+          quotes: [
+            {
+              tag: "颜色不喜欢",
+              user: "Emily_R",
+              market: "美国站",
+              date: "04-22",
+              text: "颜色和面料不符合我的预期。",
+              photos: [
+                "linear-gradient(145deg, rgba(198, 176, 155, 0.26), rgba(255,255,255,0.3)), url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=240&q=80')",
+                "linear-gradient(145deg, rgba(183, 147, 119, 0.2), rgba(255,255,255,0.3)), url('https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=240&q=80')"
+              ]
+            },
+            {
+              tag: "太小",
+              user: "Luna_M",
+              market: "美国站",
+              date: "04-20",
+              text: "太小了，胸围和下摆都偏紧，穿起来没有页面上那么宽松。",
+              photos: [
+                "linear-gradient(145deg, rgba(174, 91, 44, 0.16), rgba(255,255,255,0.3)), url('https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=240&q=80')"
+              ]
+            },
+            {
+              tag: "与描述不符",
+              user: "Grace_P",
+              market: "欧洲站",
+              date: "04-18",
+              text: "该网站让质量看起来更好，实物材质比预期薄，肩带也没有图片里那么挺。",
+              photos: [
+                "linear-gradient(145deg, rgba(160, 138, 113, 0.2), rgba(255,255,255,0.3)), url('https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=240&q=80')",
+                "linear-gradient(145deg, rgba(174, 91, 44, 0.12), rgba(255,255,255,0.3)), url('https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=240&q=80')"
+              ]
+            },
+            {
+              tag: "太小",
+              user: "Sophie_K",
+              market: "美国站",
+              date: "04-16",
+              text: "比我想要的稍微紧一点，领口和胸围都偏小，不像详情页写的那样舒适。",
+              photos: [
+                "linear-gradient(145deg, rgba(196, 165, 138, 0.2), rgba(255,255,255,0.3)), url('https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=240&q=80')"
+              ]
+            }
+          ]
+        }
+      }
+    };
+
+    function priorityClass(value) {
+      if (value === "high") return "high";
+      if (value === "mid") return "mid";
+      return "low";
+    }
+
+    function priorityLabel(value) {
+      if (value === "high") return "高优先";
+      if (value === "mid") return "中优先";
+      return "低优先";
+    }
+
+    function polylinePoints(values, height, width, padding) {
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const span = Math.max(max - min, 1);
+      return values.map((value, index) => {
+        const x = padding + (index * (width - padding * 2)) / (values.length - 1);
+        const y = height - padding - ((value - min) / span) * (height - padding * 2);
+        return `${x},${y}`;
+      }).join(" ");
+    }
+
+    function pointCircles(values, color, width, height, padding) {
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const span = Math.max(max - min, 1);
+      return values.map((value, index) => {
+        const x = padding + (index * (width - padding * 2)) / (values.length - 1);
+        const y = height - padding - ((value - min) / span) * (height - padding * 2);
+        return `<circle cx="${x}" cy="${y}" r="4.5" fill="${color}" stroke="#fff6ef" stroke-width="2"></circle>`;
+      }).join("");
+    }
+
+    function renderTrend(trend) {
+      const trendData = buildTrendDataset(trend, appState.trendPeriod);
+      const activeMetric = appState.trendMetric;
+      const activeValues = activeMetric === "refundRate" ? trendData.refundRate : trendData.loss;
+      const seriesLabel = activeMetric === "refundRate" ? "退款率趋势" : "退款损失指数";
+      const seriesColor = activeMetric === "refundRate" ? "#ae5b2c" : "#0f766e";
+      const width = 760;
+      const height = 280;
+      const padding = 34;
+      const leftPad = 52;
+      const bottomPad = 30;
+      const metricMax = Math.max(...activeValues);
+      const metricMin = Math.min(...activeValues);
+      const seriesPoints = polylinePoints(activeValues, height, width, padding);
+      const labels = trendData.days.map((day, index) => {
+        const x = padding + (index * (width - padding * 2)) / (trendData.days.length - 1);
+        return `<text x="${x}" y="${height - 8}" text-anchor="middle" class="axis-label">${day}天</text>`;
+      }).join("");
+      const yTicks = [0, 1, 2, 3].map(step => {
+        const y = padding + step * ((height - bottomPad - padding) / 3);
+        const tickValue = metricMax - ((metricMax - metricMin) * step / 3);
+        return `
+          <line x1="${leftPad - 6}" y1="${y}" x2="${width - padding}" y2="${y}" class="axis-line"></line>
+          <text x="${leftPad - 10}" y="${y + 4}" text-anchor="end" class="axis-label">${activeMetric === "refundRate" ? tickValue.toFixed(1) + "%" : Math.round(tickValue)}</text>
+        `;
+      }).join("");
+
+      return `
+        <div class="chart-wrap">
+          <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-label="近90天趋势图">
+            <line x1="${leftPad}" y1="${padding}" x2="${leftPad}" y2="${height - bottomPad}" class="axis-line"></line>
+            <line x1="${leftPad}" y1="${height - bottomPad}" x2="${width - padding}" y2="${height - bottomPad}" class="axis-line"></line>
+            ${yTicks}
+            <line id="trendCrosshair" x1="${leftPad}" y1="${padding}" x2="${leftPad}" y2="${height - bottomPad}" class="crosshair-line" style="opacity:0;"></line>
+            <polyline points="${seriesPoints}" fill="none" stroke="${seriesColor}" stroke-width="3.5"></polyline>
+            ${activeValues.map((value, index) => {
+              const x = padding + (index * (width - padding * 2)) / (activeValues.length - 1);
+              const y = height - padding - ((value - metricMin) / Math.max(metricMax - metricMin, 1)) * (height - padding * 2);
+              const displayValue = activeMetric === "refundRate" ? `${value}%` : `${value}`;
+              const note = activeMetric === "refundRate" ? `该时点退款率为 ${value}%` : `该时点退款损失指数为 ${value}`;
+              return `<circle class="trend-point" cx="${x}" cy="${y}" r="4.5" fill="${seriesColor}" stroke="#fff6ef" stroke-width="2" data-x="${x}" data-day="${trendData.days[index]}天" data-series="${seriesLabel}" data-value="${displayValue}" data-note="${note}"></circle>`;
+            }).join("")}
+            ${labels}
+            <text x="${20}" y="${18}" class="axis-label">${activeMetric === "refundRate" ? "退款率" : "损失指数"}</text>
+          </svg>
+        </div>
+        <div class="trend-tooltip" id="trendTooltip">
+          <strong>${trendData.days[trendData.days.length - 1]}天</strong>
+          <div>悬浮在折线节点上，可查看当前指标在对应时点的值，并高亮时间轴位置。</div>
+        </div>
+        <div class="legend">
+          <span><i style="background:${seriesColor}"></i>${seriesLabel}</span>
+          <span>${appState.trendPeriod} 天周期</span>
+        </div>
+      `;
+    }
+
+    function renderKpis(viewKey, kpis) {
+      const riskList = riskSkuLibrary[viewKey] || [];
+      return `
+        <div class="grid kpi-grid">
+          ${kpis.map(item => `
+            <section class="card">
+              <div class="section-head">
+                <div>
+                  <h3>${item.title}</h3>
+                  <p>${item.note}</p>
+                </div>
+                <span class="badge">${item.badge}</span>
+              </div>
+              <div class="kpi-value">${item.value}</div>
+              <div class="subline">系统按月度指标、退款评论与整改记录综合计算并展示同比/环比波动。</div>
+              ${item.title.includes("高风险货号") ? `
+                <div class="kpi-actions">
+                  <div class="popover-wrap">
+                    <button class="mini-btn">查看明细</button>
+                    <div class="popover-card">
+                      <h4>高风险货号清单</h4>
+                      ${riskList.map(row => `
+                        <div class="popover-item">
+                          <div>
+                            <strong>${row[0]}</strong>
+                            <div class="semantic-meta">${row[1]} · ${row[3]}</div>
+                          </div>
+                          <div class="confidence">${row[2]}</div>
+                        </div>
+                      `).join("")}
+                    </div>
+                  </div>
+                  <button class="mini-btn">跳转明细</button>
+                  <button class="mini-btn">下载导出</button>
+                </div>
+              ` : ""}
+            </section>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderInsight(insight) {
+      const statusLabel = insight.status === "alert" ? "异常抬升" : "整体可控";
+      const markers = insightMarkers[appState.viewKey] || [];
+      return `
+        <section class="insight-card">
+          <div class="section-head">
+            <div>
+              <h3>AI 洞察分析总结</h3>
+            </div>
+            <span class="badge">语义分析 + 指标诊断</span>
+          </div>
+          <div class="insight-main">
+            <div class="status-chip ${insight.status}">${statusLabel}</div>
+            <h4>核心结论</h4>
+            <p>${insight.summary}</p>
+            <div class="insight-chips">
+              ${markers.map(item => `
+                <button class="insight-chip insight-marker-btn" data-detail="${item[3]}">${item[0]}：${item[1]} <span class="chip-note">(${item[2]})</span></button>
+              `).join("")}
+            </div>
+            <div class="insight-detail" id="insightDetailPanel">点击上方问题标签，可查看对应的摘要明细。</div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderReasonBreakdown(insight) {
+      const reasonMap = reasonSamples[appState.viewKey] || {};
+      const hierarchyMap = reasonHierarchy[appState.viewKey] || {};
+      return `
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <h3>退款原因构成</h3>
+              <p>以下标签来自 AI 语义分析结果的自动聚合。</p>
+            </div>
+            <span class="badge">Reason Mix</span>
+          </div>
+          <div class="reason-list">
+            ${insight.reasons.map(item => `
+              <div class="reason-item">
+                <div class="reason-meta">
+                  <span class="mini-tag reason-tag">${item.label}</span>
+                  <button class="text-link-btn reason-detail-btn" data-reason="${item.label}">${appState.expandedReason === item.label ? "收起明细" : "展开明细"}</button>
+                </div>
+                <div class="score" style="text-align:left;">${item.value}% <span class="reason-count">(${(reasonMap[item.label] || []).length}条样本)</span></div>
+                <div class="bar"><span style="width:${item.width}%"></span></div>
+                ${appState.expandedReason === item.label ? `
+                  <div class="reason-detail-wrap" style="grid-column: 1 / -1;">
+                    ${(hierarchyMap[item.label] || []).map(group => `
+                      <div class="reason-subrow">
+                        <div><strong>${group[0]}</strong></div>
+                        <div>${group[1]}</div>
+                        <div class="tertiary-tags">
+                          ${group[2].map(tag => `<span class="tiny-chip">${tag}</span>`).join("")}
+                        </div>
+                      </div>
+                    `).join("")}
+                  </div>
+                ` : ""}
+              </div>
+            `).join("")}
+          </div>
+          <div class="floating-panel" id="reasonDetailPanel" hidden>
+            <h4>评论明细</h4>
+            <div class="sample-list" id="reasonDetailContent"></div>
+          </div>
+        </section>
+      `;
+    }
+
+    const semanticSamples = {
+      dashboard: [
+        ["太小了，胸口和肩膀都很紧。", "尺码问题", "偏小", "负向", "0.96"],
+        ["颜色比图片暗很多，没有页面上那么亮。", "颜色差异", "实物偏暗", "负向", "0.94"],
+        ["面料摸起来有点扎，不像详情页写得那么柔软。", "描述不符", "面料触感偏差", "负向", "0.95"],
+        ["鞋盒到了就是压坏的，送人完全不行。", "物流问题", "包装破损", "负向", "0.93"],
+        ["线头很多，做工一般。", "质量问题", "做工瑕疵", "负向", "0.97"],
+        ["比我想象中薄很多，不适合冬天。", "描述不符", "厚薄感偏差", "负向", "0.91"],
+        ["穿起来脚背有点顶，走路不舒服。", "尺码问题", "脚感偏紧", "负向", "0.92"],
+        ["颜色和图片不一样，但质量还可以。", "颜色差异", "实物色差", "中性", "0.87"],
+        ["起球比预期快，穿了两次就明显了。", "质量问题", "起球", "负向", "0.95"],
+        ["不需要了，所以退掉。", "其他原因", "无理由", "中性", "0.84"]
+      ],
+      coat: [
+        ["看图以为是厚外套，收到后偏薄。", "描述不符", "厚薄感偏差", "负向", "0.95"],
+        ["长度没有模特图里那么利落。", "描述不符", "版型偏差", "负向", "0.89"],
+        ["肩膀位置有点紧，穿毛衣会卡。", "尺码问题", "肩宽偏窄", "负向", "0.93"],
+        ["颜色比页面深一档。", "颜色差异", "实物偏深", "负向", "0.92"],
+        ["拉链顺滑度一般，但还能接受。", "质量问题", "辅料体验", "中性", "0.81"],
+        ["薄了一点，不是我想要的保暖程度。", "描述不符", "保暖预期偏差", "负向", "0.91"],
+        ["袖子偏短。", "尺码问题", "袖长偏短", "负向", "0.9"],
+        ["版型没有页面看起来那么修身。", "描述不符", "版型偏差", "负向", "0.88"],
+        ["包装还行，但衣服有折痕。", "物流问题", "包装压痕", "中性", "0.79"],
+        ["质量还可以，就是不适合我。", "其他原因", "主观不喜欢", "中性", "0.8"]
+      ],
+      sweater: [
+        ["太小了，尤其是手臂位置。", "尺码问题", "偏小", "负向", "0.97"],
+        ["摸起来没有想象中软。", "描述不符", "面料触感偏差", "负向", "0.94"],
+        ["穿一次就有点起球。", "质量问题", "起球", "负向", "0.98"],
+        ["颜色比图片灰一点。", "颜色差异", "实物偏灰", "负向", "0.9"],
+        ["领口有点扎。", "质量问题", "面料扎感", "负向", "0.93"],
+        ["比页面写的薄，不够暖和。", "描述不符", "厚薄感偏差", "负向", "0.92"],
+        ["肩线偏窄，活动不舒服。", "尺码问题", "肩宽偏窄", "负向", "0.91"],
+        ["洗一次后版型有点变。", "质量问题", "洗后变形", "负向", "0.94"],
+        ["没那么蓬松。", "描述不符", "蓬松度偏差", "负向", "0.86"],
+        ["不适合我，所以退了。", "其他原因", "主观不喜欢", "中性", "0.82"]
+      ],
+      boots: [
+        ["脚背太紧，穿久了不舒服。", "尺码问题", "脚感偏紧", "负向", "0.96"],
+        ["颜色比图片偏红。", "颜色差异", "实物偏红", "负向", "0.95"],
+        ["鞋盒压坏了，打开就变形。", "物流问题", "包装破损", "负向", "0.94"],
+        ["鞋底偏硬，走路累。", "质量问题", "脚感偏硬", "负向", "0.91"],
+        ["筒围比我想象中窄。", "尺码问题", "筒围偏窄", "负向", "0.93"],
+        ["图片看起来更高级一点。", "描述不符", "质感预期偏差", "负向", "0.89"],
+        ["颜色不难看，但和图不一样。", "颜色差异", "实物色差", "中性", "0.87"],
+        ["收到时有一点胶味。", "质量问题", "异味", "负向", "0.84"],
+        ["鞋跟比预期高，不太适合通勤。", "描述不符", "参数感知偏差", "负向", "0.86"],
+        ["不适合我穿搭。", "其他原因", "主观不喜欢", "中性", "0.8"]
+      ],
+      sku: [
+        ["颜色和面料不符合我的预期。", "描述不符", "颜色/面料偏差", "负向", "0.97"],
+        ["太小了。", "尺码问题", "偏小", "负向", "0.99"],
+        ["不喜欢。", "其他原因", "主观不喜欢", "中性", "0.82"],
+        ["颜色。", "颜色差异", "实物色差", "负向", "0.88"],
+        ["该网站让质量看起来更好。", "描述不符", "质感预期偏差", "负向", "0.95"],
+        ["比我想要的稍微紧一点。", "尺码问题", "偏紧", "负向", "0.93"],
+        ["面料没有想象中舒服。", "描述不符", "面料触感偏差", "负向", "0.92"],
+        ["颜色没有页面那么好看。", "颜色差异", "实物偏暗", "负向", "0.9"],
+        ["版型有点短。", "尺码问题", "衣长偏短", "负向", "0.88"],
+        ["不需要了。", "其他原因", "无理由", "中性", "0.81"]
+      ]
+    };
+
+    const riskSkuLibrary = {
+      dashboard: [
+        ["SW4820", "毛衣", "18.7%", "尺码偏小 / 起球"],
+        ["BT3342", "靴子", "17.9%", "脚感偏紧 / 颜色差异"],
+        ["RC6487", "背心", "17.4%", "颜色偏差 / 偏小"],
+        ["SW5209", "毛衣", "16.8%", "起球 / 面料不符"],
+        ["CT9014", "外套", "15.6%", "版型偏窄 / 描述不符"]
+      ],
+      coat: [
+        ["CT9014", "长款外套", "13.1%", "版型偏窄"],
+        ["CT8821", "风衣", "12.8%", "厚薄感偏差"],
+        ["CT7744", "夹克", "11.7%", "袖长偏短"],
+        ["CT6409", "短外套", "10.9%", "颜色偏深"]
+      ],
+      sweater: [
+        ["SW4820", "开衫毛衣", "19.2%", "偏小 / 手臂紧"],
+        ["SW5209", "套头毛衣", "18.1%", "起球 / 线头"],
+        ["SW6114", "针织衫", "16.9%", "触感偏差"],
+        ["SW4302", "开衫毛衣", "15.4%", "厚薄感偏差"]
+      ],
+      boots: [
+        ["BT3342", "短靴", "18.4%", "脚感偏紧"],
+        ["BT4107", "中筒靴", "17.1%", "颜色偏红"],
+        ["BT3980", "短靴", "15.8%", "鞋盒破损"],
+        ["BT2871", "长靴", "14.9%", "脚背偏紧"]
+      ],
+      sku: [
+        ["RC6487-BL-S", "背心", "18.2%", "偏小 / 面料偏差"],
+        ["RC6487-GR-M", "背心", "17.6%", "颜色偏差"],
+        ["RC6487-RD-S", "背心", "17.1%", "偏紧 / 描述不符"]
+      ]
+    };
+
+    const insightMarkers = {
+      dashboard: [
+        ["主要问题品类", "毛衣 14.1%", "相关评论 126 条", "毛衣近 90 天退款率高于大盘 2.3pct，评论主要集中在“偏小”“起球”“面料不符”。"],
+        ["主要问题品类", "靴子 15.6%", "相关评论 94 条", "靴子退款同时受脚感偏紧和颜色差异影响，且物流破损评论占比也在上升。"],
+        ["高频原因", "尺码问题 31%", "样本评论 238 条", "尺码问题在美国站尤为突出，集中在毛衣和靴子两大品类。"],
+        ["高频原因", "质量问题 24%", "样本评论 186 条", "质量问题以起球、做工瑕疵和异味为主，建议按批次复检。"]
+      ],
+      coat: [
+        ["主要问题款", "CT8821", "厚薄感偏差 34 条", "CT8821 页面承诺偏保暖，但实物收到后多数反馈偏薄。"],
+        ["高频原因", "描述不符 33%", "相关评论 72 条", "外套问题主要来自厚薄感和版型预期偏差，属于可快速修正的页面问题。"],
+        ["高频原因", "尺码问题 26%", "相关评论 58 条", "尺码反馈集中在肩宽和袖长，加州与纽约州用户更敏感。"]
+      ],
+      sweater: [
+        ["主要问题款", "SW4820", "偏小评论 41 条", "SW4820 在 S/M 码的偏小反馈最集中，是当前最需治理的风险款。"],
+        ["主要问题款", "SW5209", "起球评论 37 条", "SW5209 的起球与线头问题呈批次聚集特征。"],
+        ["高频原因", "尺码问题 34%", "相关评论 122 条", "毛衣类尺码问题已成为主因，建议优先调整试穿建议与尺码表。"]
+      ],
+      boots: [
+        ["主要问题款", "BT3342", "脚感偏紧 39 条", "BT3342 主要问题是脚背偏紧和穿着不舒适，适合先优化脚感描述。"],
+        ["高频原因", "颜色差异 21%", "相关评论 68 条", "棕色和酒红色靴款存在明显色差反馈，建议补自然光实拍。"],
+        ["高频原因", "物流问题 12%", "相关评论 31 条", "鞋盒破损和挤压变形导致的退款在美国站更突出。"]
+      ],
+      sku: [
+        ["主要问题", "太小 28%", "样本评论 22 条", "RC6487 的偏小反馈主要来自紧身和衣长偏短。"],
+        ["主要问题", "颜色不喜欢 19%", "样本评论 15 条", "颜色预期偏差来自页面图片与实物色调差异。"],
+        ["主要问题", "与描述不符 12%", "样本评论 11 条", "用户更在意材质质感和页面渲染效果的落差。"]
+      ]
+    };
+
+    const reasonSamples = {
+      dashboard: {
+        "尺码问题": ["太小了，胸口和肩膀都很紧。", "穿起来脚背有点顶，走路不舒服。", "比我想要的稍微紧一点。"],
+        "质量问题": ["线头很多，做工一般。", "起球比预期快，穿了两次就明显了。", "收到时有一点胶味。"],
+        "描述不符": ["面料摸起来有点扎，不像详情页写得那么柔软。", "比我想象中薄很多，不适合冬天。", "该网站让质量看起来更好。"],
+        "颜色差异": ["颜色比图片暗很多，没有页面上那么亮。", "颜色和图片不一样，但质量还可以。"],
+        "物流问题": ["鞋盒到了就是压坏的，送人完全不行。"]
+      },
+      coat: {
+        "描述不符": ["看图以为是厚外套，收到后偏薄。", "版型没有页面看起来那么修身。"],
+        "尺码问题": ["肩膀位置有点紧，穿毛衣会卡。", "袖子偏短。"]
+      },
+      sweater: {
+        "尺码问题": ["太小了，尤其是手臂位置。", "肩线偏窄，活动不舒服。"],
+        "面料/质量": ["穿一次就有点起球。", "领口有点扎。"],
+        "描述不符": ["摸起来没有想象中软。", "比页面写的薄，不够暖和。"]
+      },
+      boots: {
+        "尺码/脚感": ["脚背太紧，穿久了不舒服。", "筒围比我想象中窄。"],
+        "颜色差异": ["颜色比图片偏红。", "颜色不难看，但和图不一样。"],
+        "物流问题": ["鞋盒压坏了，打开就变形。"]
+      },
+      sku: {
+        "太小": ["太小了。", "比我想要的稍微紧一点。", "版型有点短。"],
+        "颜色不喜欢": ["颜色没有页面那么好看。", "颜色。"],
+        "与描述不符": ["该网站让质量看起来更好。", "颜色和面料不符合我的预期。"]
+      }
+    };
+
+    const reasonHierarchy = {
+      dashboard: {
+        "尺码问题": [
+          ["偏小", "146 条", ["肩宽偏窄", "胸围偏紧", "袖口偏紧"]],
+          ["偏大", "92 条", ["衣长偏长", "腰围偏松", "裤腿偏宽"]]
+        ],
+        "质量问题": [
+          ["面料问题", "103 条", ["起球", "扎感", "异味"]],
+          ["做工问题", "83 条", ["线头", "缝线", "胶痕"]]
+        ],
+        "描述不符": [
+          ["材质不符", "97 条", ["触感偏硬", "柔软度不符", "厚薄感偏差"]],
+          ["版型不符", "69 条", ["修身度不符", "长度偏差", "参数感知偏差"]]
+        ],
+        "颜色差异": [
+          ["实物偏深", "54 条", ["深棕偏红", "灰度偏深"]],
+          ["实物偏暗", "32 条", ["亮度不足", "饱和度偏低"]]
+        ],
+        "物流问题": [
+          ["包装破损", "21 条", ["鞋盒压损", "外箱破损"]]
+        ]
+      },
+      coat: {
+        "描述不符": [
+          ["厚薄感偏差", "34 条", ["偏薄", "不够保暖"]],
+          ["版型偏差", "21 条", ["长度不符", "修身度不符"]]
+        ],
+        "尺码问题": [
+          ["偏小", "18 条", ["肩宽偏窄", "袖长偏短"]]
+        ]
+      },
+      sweater: {
+        "尺码问题": [
+          ["偏小", "41 条", ["手臂偏紧", "肩宽偏窄", "衣长偏短"]]
+        ],
+        "面料/质量": [
+          ["面料问题", "37 条", ["起球", "扎感"]],
+          ["洗后问题", "18 条", ["变形", "缩水"]]
+        ],
+        "描述不符": [
+          ["触感不符", "26 条", ["不够柔软", "蓬松度不足"]],
+          ["厚薄感偏差", "19 条", ["偏薄", "不够暖"]]
+        ]
+      },
+      boots: {
+        "尺码/脚感": [
+          ["偏小", "39 条", ["脚背偏紧", "筒围偏窄"]],
+          ["脚感问题", "22 条", ["鞋底偏硬", "鞋垫支撑弱"]]
+        ],
+        "颜色差异": [
+          ["实物偏红", "28 条", ["深棕偏红", "酒红色偏暗"]]
+        ],
+        "物流问题": [
+          ["包装破损", "17 条", ["鞋盒压坏", "挤压变形"]]
+        ]
+      },
+      sku: {
+        "太小": [
+          ["偏小", "22 条", ["胸围偏紧", "衣长偏短"]]
+        ],
+        "颜色不喜欢": [
+          ["色差", "15 条", ["实物偏暗", "饱和度偏低"]]
+        ],
+        "与描述不符": [
+          ["材质不符", "11 条", ["质感偏差", "面料触感偏差"]]
+        ]
+      }
+    };
+
+    const tertiaryMap = {
+      "偏小": "肩宽/胸围/衣长",
+      "偏大": "腰围/裤腿/袖口",
+      "脚感偏紧": "脚背/筒围",
+      "实物偏暗": "亮度/饱和度",
+      "实物色差": "综合色偏差",
+      "实物偏灰": "灰度偏高",
+      "实物偏红": "红调偏重",
+      "面料触感偏差": "柔软度/扎感",
+      "厚薄感偏差": "偏薄/不够暖",
+      "质感预期偏差": "表面纹理/光泽",
+      "包装破损": "鞋盒/外箱",
+      "做工瑕疵": "线头/缝线",
+      "起球": "表面起球",
+      "洗后变形": "缩水/走形",
+      "异味": "胶味/化学气味",
+      "无理由": "主观取消",
+      "主观不喜欢": "穿搭/风格",
+      "颜色/面料偏差": "色调/触感",
+      "衣长偏短": "下摆位置",
+      "偏紧": "胸围/肩宽",
+      "肩宽偏窄": "肩线位置",
+      "袖长偏短": "袖口位置",
+      "版型偏差": "修身度/长度",
+      "保暖预期偏差": "偏薄/保暖度",
+      "辅料体验": "拉链/扣子",
+      "面料扎感": "领口/内里",
+      "蓬松度偏差": "表层织感",
+      "脚感偏硬": "鞋底/鞋垫",
+      "参数感知偏差": "跟高/筒高",
+      "包装压痕": "外箱/折痕"
+    };
+
+    const dimensionLibrary = {
+      dashboard: {
+        defaultTab: "channel",
+        tabs: [
+          { key: "channel", label: "渠道" },
+          { key: "category", label: "品类" },
+          { key: "sku", label: "货号" },
+          { key: "region", label: "地区" },
+          { key: "price", label: "价格带" }
+        ],
+        data: {
+          channel: [
+            ["美国站", "12.6%", "¥1.86M", "31%", "高风险"],
+            ["欧洲站", "10.4%", "¥1.12M", "24%", "关注"],
+            ["英国站", "9.8%", "¥0.72M", "18%", "稳定"],
+            ["加拿大站", "8.9%", "¥0.56M", "14%", "稳定"]
+          ],
+          category: [
+            ["毛衣", "14.1%", "¥0.98M", "34%", "高风险"],
+            ["靴子", "15.6%", "¥0.93M", "29%", "高风险"],
+            ["外套", "9.4%", "¥0.41M", "33%", "关注"],
+            ["背心/吊带", "11.7%", "¥0.28M", "28%", "关注"]
+          ],
+          sku: [
+            ["SW4820", "18.7%", "¥0.21M", "41%", "高风险"],
+            ["BT3342", "17.9%", "¥0.19M", "29%", "高风险"],
+            ["RC6487", "17.4%", "¥0.16M", "28%", "高风险"],
+            ["CT9014", "15.6%", "¥0.13M", "26%", "关注"]
+          ],
+          region: [
+            ["加利福尼亚州", "13.4%", "¥0.58M", "34%", "高风险"],
+            ["得克萨斯州", "12.7%", "¥0.41M", "30%", "高风险"],
+            ["纽约州", "12.1%", "¥0.36M", "27%", "关注"],
+            ["佛罗里达州", "11.6%", "¥0.28M", "25%", "关注"],
+            ["伊利诺伊州", "10.9%", "¥0.19M", "21%", "关注"],
+            ["华盛顿州", "10.2%", "¥0.12M", "18%", "稳定"],
+            ["新泽西州", "9.8%", "¥0.09M", "16%", "稳定"],
+            ["佐治亚州", "9.3%", "¥0.07M", "13%", "稳定"]
+          ],
+          price: [
+            ["0-20 美元", "12.9%", "¥0.88M", "尺码问题", "高风险"],
+            ["20-40 美元", "11.7%", "¥1.49M", "描述不符", "关注"],
+            ["40-60 美元", "10.6%", "¥1.02M", "质量问题", "关注"],
+            ["60 美元以上", "9.2%", "¥0.87M", "颜色差异", "稳定"]
+          ]
+        }
+      },
+      coat: {
+        defaultTab: "channel",
+        tabs: [
+          { key: "channel", label: "渠道" },
+          { key: "sku", label: "货号" },
+          { key: "region", label: "地区" },
+          { key: "price", label: "价格带" }
+        ],
+        data: {
+          channel: [
+            ["美国站", "10.2%", "¥0.19M", "33%", "关注"],
+            ["欧洲站", "8.8%", "¥0.12M", "24%", "稳定"],
+            ["英国站", "8.1%", "¥0.09M", "19%", "稳定"]
+          ],
+          sku: [
+            ["CT8821", "12.8%", "¥0.07M", "34%", "高风险"],
+            ["CT9014", "13.1%", "¥0.08M", "29%", "高风险"],
+            ["CT7744", "11.7%", "¥0.05M", "21%", "关注"]
+          ],
+          region: [
+            ["加利福尼亚州", "10.8%", "¥0.07M", "描述不符", "关注"],
+            ["得克萨斯州", "10.1%", "¥0.05M", "厚薄感偏差", "关注"],
+            ["纽约州", "9.6%", "¥0.04M", "尺码问题", "关注"],
+            ["佛罗里达州", "9.1%", "¥0.03M", "颜色差异", "稳定"],
+            ["华盛顿州", "8.4%", "¥0.02M", "版型偏差", "稳定"]
+          ],
+          price: [
+            ["0-30 美元", "10.8%", "¥0.14M", "厚薄感偏差", "关注"],
+            ["30-60 美元", "9.2%", "¥0.18M", "版型偏差", "关注"],
+            ["60 美元以上", "8.4%", "¥0.08M", "尺码问题", "稳定"]
+          ]
+        }
+      },
+      sweater: {
+        defaultTab: "channel",
+        tabs: [
+          { key: "channel", label: "渠道" },
+          { key: "sku", label: "货号" },
+          { key: "region", label: "地区" },
+          { key: "price", label: "价格带" }
+        ],
+        data: {
+          channel: [
+            ["美国站", "15.2%", "¥0.44M", "34%", "高风险"],
+            ["欧洲站", "12.6%", "¥0.27M", "26%", "关注"],
+            ["英国站", "11.9%", "¥0.18M", "21%", "关注"]
+          ],
+          sku: [
+            ["SW4820", "19.2%", "¥0.15M", "41%", "高风险"],
+            ["SW5209", "18.1%", "¥0.13M", "37%", "高风险"],
+            ["SW6114", "16.9%", "¥0.11M", "24%", "关注"]
+          ],
+          region: [
+            ["加利福尼亚州", "16.2%", "¥0.15M", "尺码问题", "高风险"],
+            ["得克萨斯州", "15.7%", "¥0.11M", "面料不符", "高风险"],
+            ["纽约州", "14.8%", "¥0.08M", "起球", "关注"],
+            ["伊利诺伊州", "13.6%", "¥0.07M", "面料不符", "关注"],
+            ["新泽西州", "12.9%", "¥0.06M", "颜色差异", "关注"]
+          ],
+          price: [
+            ["0-25 美元", "15.8%", "¥0.29M", "偏小", "高风险"],
+            ["25-45 美元", "13.9%", "¥0.33M", "面料触感偏差", "关注"],
+            ["45 美元以上", "11.7%", "¥0.17M", "起球", "关注"]
+          ]
+        }
+      },
+      boots: {
+        defaultTab: "channel",
+        tabs: [
+          { key: "channel", label: "渠道" },
+          { key: "sku", label: "货号" },
+          { key: "region", label: "地区" },
+          { key: "price", label: "价格带" }
+        ],
+        data: {
+          channel: [
+            ["美国站", "16.8%", "¥0.39M", "29%", "高风险"],
+            ["欧洲站", "14.2%", "¥0.22M", "21%", "关注"],
+            ["英国站", "13.6%", "¥0.16M", "18%", "关注"]
+          ],
+          sku: [
+            ["BT3342", "18.4%", "¥0.12M", "39%", "高风险"],
+            ["BT4107", "17.1%", "¥0.10M", "24%", "高风险"],
+            ["BT3980", "15.8%", "¥0.08M", "18%", "关注"]
+          ],
+          region: [
+            ["加利福尼亚州", "17.4%", "¥0.13M", "脚感偏紧", "高风险"],
+            ["得克萨斯州", "16.7%", "¥0.09M", "颜色差异", "高风险"],
+            ["佛罗里达州", "15.8%", "¥0.07M", "物流问题", "关注"],
+            ["纽约州", "15.1%", "¥0.06M", "脚感偏硬", "关注"],
+            ["佐治亚州", "14.2%", "¥0.04M", "包装压痕", "关注"]
+          ],
+          price: [
+            ["0-40 美元", "16.2%", "¥0.22M", "鞋盒破损", "高风险"],
+            ["40-70 美元", "15.4%", "¥0.31M", "脚感偏紧", "高风险"],
+            ["70 美元以上", "13.8%", "¥0.15M", "颜色差异", "关注"]
+          ]
+        }
+      },
+      sku: {
+        defaultTab: "channel",
+        tabs: [
+          { key: "channel", label: "渠道" },
+          { key: "comment", label: "评论" },
+          { key: "region", label: "地区" },
+          { key: "price", label: "价格带" }
+        ],
+        data: {
+          channel: [
+            ["美国站", "17.4%", "¥0.16M", "28%", "高风险"],
+            ["欧洲站", "11.6%", "¥0.04M", "14%", "关注"]
+          ],
+          comment: [
+            ["颜色和面料不符合预期", "31%", "42 条", "高点赞", "高风险"],
+            ["太小了 / 稍微紧", "28%", "36 条", "高复现", "高风险"],
+            ["网站让质量看起来更好", "12%", "11 条", "强负向", "关注"]
+          ],
+          region: [
+            ["加利福尼亚州", "18.2%", "¥0.06M", "偏小 / 色差", "高风险"],
+            ["得克萨斯州", "17.6%", "¥0.04M", "偏小", "高风险"],
+            ["纽约州", "16.8%", "¥0.03M", "主观不喜欢", "关注"],
+            ["佛罗里达州", "15.9%", "¥0.02M", "面料偏差", "关注"],
+            ["新泽西州", "14.7%", "¥0.01M", "色差", "关注"]
+          ],
+          price: [
+            ["0-20 美元", "18.1%", "¥0.09M", "颜色/面料偏差", "高风险"],
+            ["20-35 美元", "16.8%", "¥0.07M", "偏小", "高风险"]
+          ]
+        }
+      }
+    };
+
+    const dimensionConfigLibrary = {
+      dashboard: {
+        defaultGroup: "channel",
+        defaultSubtab: "site",
+        groups: [
+          { key: "channel", label: "渠道", subtabs: [{ key: "site", label: "站点" }] },
+          { key: "product", label: "产品", subtabs: [{ key: "newOld", label: "新老款" }, { key: "category", label: "品类" }, { key: "price", label: "价格带" }, { key: "sku", label: "货号" }, { key: "size", label: "尺码" }, { key: "color", label: "颜色" }] },
+          { key: "user", label: "用户", subtabs: [{ key: "userType", label: "新老客" }, { key: "region", label: "地区" }] },
+          { key: "order", label: "订单", subtabs: [{ key: "lifecycle", label: "退货发起阶段" }, { key: "sameStyleQty", label: "同款件数结构" }] }
+        ],
+        data: {
+          site: [["美国站","12.6%","¥1.86M","尺码问题","高风险"],["欧洲站","10.4%","¥1.12M","描述不符","关注"],["英国站","9.8%","¥0.72M","质量问题","稳定"]],
+          newOld: [["新款","13.9%","¥1.44M","描述不符","高风险"],["老款","9.7%","¥1.08M","尺码问题","关注"]],
+          category: [["毛衣","14.1%","¥0.98M","尺码问题","高风险"],["靴子","15.6%","¥0.93M","脚感/色差","高风险"],["外套","9.4%","¥0.41M","描述不符","关注"]],
+          price: [["0-20 美元","12.9%","¥0.88M","尺码问题","高风险"],["20-40 美元","11.7%","¥1.49M","描述不符","关注"],["40-60 美元","10.6%","¥1.02M","质量问题","关注"]],
+          sku: [["SW4820","18.7%","¥0.21M","偏小/起球","高风险"],["BT3342","17.9%","¥0.19M","脚感偏紧","高风险"],["RC6487","17.4%","¥0.16M","色差/偏小","高风险"]],
+          size: [["XS/S","13.8%","¥0.82M","偏小/偏紧","高风险"],["M","11.9%","¥0.96M","描述不符","关注"],["L/XL","10.7%","¥0.71M","偏大/袖长","关注"]],
+          color: [["黑色系","10.9%","¥0.76M","质量问题","关注"],["白/米色系","12.6%","¥0.93M","透视/色差","高风险"],["棕/酒红色系","13.4%","¥0.88M","颜色差异","高风险"]],
+          userType: [["新客","13.2%","¥1.14M","描述不符","关注"],["老客","9.6%","¥0.96M","质量问题","稳定"]],
+          region: [["加利福尼亚州","13.4%","¥0.58M","尺码问题","高风险"],["得克萨斯州","12.7%","¥0.41M","描述不符","高风险"],["纽约州","12.1%","¥0.36M","尺码问题","关注"],["佛罗里达州","11.6%","¥0.28M","颜色差异","关注"],["伊利诺伊州","10.9%","¥0.19M","质量问题","关注"],["华盛顿州","10.2%","¥0.12M","描述不符","稳定"],["新泽西州","9.8%","¥0.09M","颜色差异","稳定"],["佐治亚州","9.3%","¥0.07M","主观不喜欢","稳定"]],
+          lifecycle: [["签收后 0-3 天","7.8%","¥0.42M","主观取消","稳定"],["签收后 4-7 天","11.6%","¥0.88M","描述不符","关注"],["签收后 8-15 天","14.3%","¥1.21M","尺码问题","高风险"],["签收后 15 天以上","10.1%","¥0.54M","质量问题","关注"]],
+          sameStyleQty: [["单件单款订单","9.2%","¥0.61M","主观不喜欢","稳定"],["同款 2 件订单","12.8%","¥0.84M","尺码问题","高风险"],["同款 3 件及以上订单","15.6%","¥0.73M","描述不符","高风险"],["多款混合订单","10.7%","¥0.67M","颜色差异","关注"]]
+        }
+      },
+      coat: {
+        defaultGroup: "channel",
+        defaultSubtab: "site",
+        groups: [
+          { key: "channel", label: "渠道", subtabs: [{ key: "site", label: "站点" }] },
+          { key: "product", label: "产品", subtabs: [{ key: "newOld", label: "新老款" }, { key: "category", label: "子品类" }, { key: "price", label: "价格带" }, { key: "sku", label: "货号" }, { key: "size", label: "尺码" }, { key: "color", label: "颜色" }] },
+          { key: "user", label: "用户", subtabs: [{ key: "userType", label: "新老客" }, { key: "region", label: "地区" }] },
+          { key: "order", label: "订单", subtabs: [{ key: "lifecycle", label: "退货发起阶段" }, { key: "sameStyleQty", label: "同款件数结构" }] }
+        ],
+        data: {
+          site: [["美国站","10.2%","¥0.19M","厚薄感偏差","关注"],["欧洲站","8.8%","¥0.12M","尺码问题","稳定"]],
+          newOld: [["新款","10.8%","¥0.15M","描述不符","关注"],["老款","8.6%","¥0.09M","颜色差异","稳定"]],
+          category: [["风衣","12.8%","¥0.07M","厚薄感偏差","高风险"],["夹克","11.7%","¥0.05M","袖长偏短","关注"],["短外套","10.1%","¥0.04M","色差","关注"]],
+          price: [["0-30 美元","10.8%","¥0.14M","厚薄感偏差","关注"],["30-60 美元","9.2%","¥0.18M","版型偏差","关注"]],
+          sku: [["CT8821","12.8%","¥0.07M","偏薄","高风险"],["CT9014","13.1%","¥0.08M","偏窄","高风险"]],
+          size: [["S","12.9%","¥0.06M","肩宽偏窄","高风险"],["M","10.1%","¥0.07M","长度偏差","关注"],["L/XL","8.9%","¥0.05M","袖长偏长","稳定"]],
+          color: [["卡其/燕麦色","11.8%","¥0.08M","色差","关注"],["黑色","9.6%","¥0.06M","版型偏差","稳定"],["军绿色","10.4%","¥0.05M","厚薄感偏差","关注"]],
+          userType: [["新客","11.1%","¥0.12M","描述不符","关注"],["老客","8.4%","¥0.08M","尺码问题","稳定"]],
+          region: [["加利福尼亚州","10.8%","¥0.07M","厚薄感偏差","关注"],["得克萨斯州","10.1%","¥0.05M","描述不符","关注"],["纽约州","9.6%","¥0.04M","尺码问题","关注"],["佛罗里达州","9.1%","¥0.03M","颜色差异","稳定"],["华盛顿州","8.4%","¥0.02M","版型偏差","稳定"]],
+          lifecycle: [["签收后 0-3 天","6.4%","¥0.03M","主观取消","稳定"],["签收后 4-7 天","9.8%","¥0.09M","描述不符","关注"],["签收后 8-15 天","11.6%","¥0.11M","尺码问题","关注"]],
+          sameStyleQty: [["单件单款订单","8.3%","¥0.05M","描述不符","稳定"],["同款 2 件订单","10.9%","¥0.07M","尺码问题","关注"],["同款 3 件及以上订单","12.2%","¥0.06M","厚薄感偏差","关注"],["多款混合订单","9.6%","¥0.05M","色差","稳定"]]
+        }
+      },
+      sweater: {
+        defaultGroup: "channel",
+        defaultSubtab: "site",
+        groups: [
+          { key: "channel", label: "渠道", subtabs: [{ key: "site", label: "站点" }] },
+          { key: "product", label: "产品", subtabs: [{ key: "newOld", label: "新老款" }, { key: "category", label: "子品类" }, { key: "price", label: "价格带" }, { key: "sku", label: "货号" }, { key: "size", label: "尺码" }, { key: "color", label: "颜色" }] },
+          { key: "user", label: "用户", subtabs: [{ key: "userType", label: "新老客" }, { key: "region", label: "地区" }] },
+          { key: "order", label: "订单", subtabs: [{ key: "lifecycle", label: "退货发起阶段" }, { key: "sameStyleQty", label: "同款件数结构" }] }
+        ],
+        data: {
+          site: [["美国站","15.2%","¥0.44M","尺码问题","高风险"],["欧洲站","12.6%","¥0.27M","面料不符","关注"]],
+          newOld: [["新款","14.9%","¥0.31M","尺码问题","高风险"],["老款","12.4%","¥0.24M","起球","关注"]],
+          category: [["开衫毛衣","19.2%","¥0.15M","偏小","高风险"],["套头毛衣","18.1%","¥0.13M","起球","高风险"],["针织衫","16.9%","¥0.11M","触感偏差","关注"]],
+          price: [["0-25 美元","15.8%","¥0.29M","偏小","高风险"],["25-45 美元","13.9%","¥0.33M","面料触感偏差","关注"]],
+          sku: [["SW4820","19.2%","¥0.15M","偏小","高风险"],["SW5209","18.1%","¥0.13M","起球","高风险"]],
+          size: [["S","18.9%","¥0.17M","偏小/偏紧","高风险"],["M","14.6%","¥0.16M","触感偏差","关注"],["L/XL","12.7%","¥0.12M","起球","关注"]],
+          color: [["米白色","15.2%","¥0.14M","透视/起球","关注"],["驼色","13.8%","¥0.11M","面料不符","关注"],["酒红/深灰色","16.1%","¥0.18M","色差","高风险"]],
+          userType: [["新客","16.1%","¥0.22M","偏小","高风险"],["老客","11.3%","¥0.14M","起球","稳定"]],
+          region: [["加利福尼亚州","16.2%","¥0.15M","尺码问题","高风险"],["得克萨斯州","15.7%","¥0.11M","面料不符","高风险"],["纽约州","14.8%","¥0.08M","起球","关注"],["伊利诺伊州","13.6%","¥0.07M","面料不符","关注"],["新泽西州","12.9%","¥0.06M","颜色差异","关注"]],
+          lifecycle: [["签收后 0-3 天","8.6%","¥0.06M","主观取消","稳定"],["签收后 4-7 天","12.8%","¥0.19M","尺码问题","关注"],["签收后 8-15 天","16.2%","¥0.26M","起球","高风险"]],
+          sameStyleQty: [["单件单款订单","11.2%","¥0.14M","面料不符","关注"],["同款 2 件订单","14.7%","¥0.18M","尺码问题","高风险"],["同款 3 件及以上订单","17.1%","¥0.16M","偏小","高风险"],["多款混合订单","12.5%","¥0.13M","起球","关注"]]
+        }
+      },
+      boots: {
+        defaultGroup: "channel",
+        defaultSubtab: "site",
+        groups: [
+          { key: "channel", label: "渠道", subtabs: [{ key: "site", label: "站点" }] },
+          { key: "product", label: "产品", subtabs: [{ key: "newOld", label: "新老款" }, { key: "category", label: "子品类" }, { key: "price", label: "价格带" }, { key: "sku", label: "货号" }, { key: "size", label: "尺码" }, { key: "color", label: "颜色" }] },
+          { key: "user", label: "用户", subtabs: [{ key: "userType", label: "新老客" }, { key: "region", label: "地区" }] },
+          { key: "order", label: "订单", subtabs: [{ key: "lifecycle", label: "退货发起阶段" }, { key: "sameStyleQty", label: "同款件数结构" }] }
+        ],
+        data: {
+          site: [["美国站","16.8%","¥0.39M","脚感偏紧","高风险"],["欧洲站","14.2%","¥0.22M","颜色差异","关注"]],
+          newOld: [["新款","16.2%","¥0.27M","色差","高风险"],["老款","13.8%","¥0.16M","脚感问题","关注"]],
+          category: [["短靴","18.4%","¥0.12M","脚感偏紧","高风险"],["中筒靴","17.1%","¥0.10M","颜色偏红","高风险"],["长靴","14.9%","¥0.08M","筒围偏窄","关注"]],
+          price: [["0-40 美元","16.2%","¥0.22M","鞋盒破损","高风险"],["40-70 美元","15.4%","¥0.31M","脚感偏紧","高风险"]],
+          sku: [["BT3342","18.4%","¥0.12M","脚感偏紧","高风险"],["BT4107","17.1%","¥0.10M","颜色偏红","高风险"]],
+          size: [["36/37","16.8%","¥0.14M","脚感偏紧","高风险"],["38","14.9%","¥0.12M","筒围偏窄","关注"],["39/40","13.6%","¥0.09M","偏大","关注"]],
+          color: [["深棕色","17.2%","¥0.11M","颜色偏红","高风险"],["黑色","14.8%","¥0.13M","脚感偏紧","关注"],["米白色","13.1%","¥0.07M","污渍显色","关注"]],
+          userType: [["新客","16.3%","¥0.21M","脚感偏紧","高风险"],["老客","11.8%","¥0.09M","颜色差异","稳定"]],
+          region: [["加利福尼亚州","17.4%","¥0.13M","脚感偏紧","高风险"],["得克萨斯州","16.7%","¥0.09M","颜色差异","高风险"],["佛罗里达州","15.8%","¥0.07M","物流问题","关注"],["纽约州","15.1%","¥0.06M","脚感偏硬","关注"],["佐治亚州","14.2%","¥0.04M","包装压痕","关注"]],
+          lifecycle: [["签收后 0-3 天","7.9%","¥0.05M","主观取消","稳定"],["签收后 4-7 天","13.6%","¥0.17M","颜色差异","关注"],["签收后 8-15 天","17.2%","¥0.22M","脚感偏紧","高风险"]],
+          sameStyleQty: [["单件单款订单","12.1%","¥0.12M","颜色差异","关注"],["同款 2 件订单","15.8%","¥0.16M","脚感偏紧","高风险"],["同款 3 件及以上订单","17.6%","¥0.14M","筒围偏窄","高风险"],["多款混合订单","13.4%","¥0.11M","包装破损","关注"]]
+        }
+      },
+      sku: {
+        defaultGroup: "channel",
+        defaultSubtab: "site",
+        groups: [
+          { key: "channel", label: "渠道", subtabs: [{ key: "site", label: "站点" }] },
+          { key: "product", label: "产品", subtabs: [{ key: "newOld", label: "新老款" }, { key: "price", label: "价格带" }, { key: "sku", label: "子SKU" }, { key: "size", label: "尺码" }, { key: "color", label: "颜色" }] },
+          { key: "user", label: "用户", subtabs: [{ key: "userType", label: "新老客" }, { key: "region", label: "地区" }] },
+          { key: "order", label: "订单", subtabs: [{ key: "lifecycle", label: "退货发起阶段" }, { key: "sameStyleQty", label: "同款件数结构" }] }
+        ],
+        data: {
+          site: [["美国站","17.4%","¥0.16M","偏小/色差","高风险"],["欧洲站","11.6%","¥0.04M","主观不喜欢","关注"]],
+          newOld: [["新款","17.8%","¥0.10M","色差","高风险"],["老款","15.9%","¥0.06M","偏小","关注"]],
+          price: [["0-20 美元","18.1%","¥0.09M","颜色/面料偏差","高风险"],["20-35 美元","16.8%","¥0.07M","偏小","高风险"]],
+          sku: [["RC6487-BL-S","18.2%","¥0.05M","偏小","高风险"],["RC6487-GR-M","17.6%","¥0.06M","色差","高风险"]],
+          size: [["S","18.8%","¥0.05M","偏小/领口偏紧","高风险"],["M","17.1%","¥0.07M","色差/偏小","高风险"],["L","14.2%","¥0.04M","描述不符","关注"]],
+          color: [["黑色","18.2%","¥0.05M","偏小","高风险"],["灰绿色","17.6%","¥0.06M","色差","高风险"],["白色","14.1%","¥0.03M","面料偏薄","关注"]],
+          userType: [["新客","19.1%","¥0.09M","描述不符","高风险"],["老客","13.8%","¥0.07M","偏小","关注"]],
+          region: [["加利福尼亚州","18.2%","¥0.06M","偏小/色差","高风险"],["得克萨斯州","17.6%","¥0.04M","偏小","高风险"],["纽约州","16.8%","¥0.03M","主观不喜欢","关注"],["佛罗里达州","15.9%","¥0.02M","面料偏差","关注"],["新泽西州","14.7%","¥0.01M","色差","关注"]],
+          lifecycle: [["签收后 0-3 天","8.2%","¥0.02M","主观取消","稳定"],["签收后 4-7 天","14.6%","¥0.05M","色差","关注"],["签收后 8-15 天","18.1%","¥0.08M","偏小","高风险"]],
+          sameStyleQty: [["单件单款订单","13.6%","¥0.04M","色差","关注"],["同款 2 件订单","17.2%","¥0.05M","偏小","高风险"],["同款 3 件及以上订单","18.8%","¥0.03M","描述不符","高风险"],["多款混合订单","12.4%","¥0.02M","主观不喜欢","关注"]]
+        }
+      }
+    };
+
+    const heatmapLibrary = {
+      dashboard: {
+        defaultDim: "category",
+        dims: [
+          { key: "channel", label: "渠道" },
+          { key: "category", label: "品类" },
+          { key: "price", label: "价格带" },
+          { key: "region", label: "地区" }
+        ],
+        columns: ["尺码问题", "质量问题", "描述不符", "颜色差异", "物流问题", "其他"],
+        rows: {
+          channel: [["美国站",[24,14,13,10,6,5]],["欧洲站",[16,10,15,8,4,4]],["英国站",[12,9,11,7,3,3]],["加拿大站",[10,7,9,6,3,2]]],
+          category: [["连衣裙",[28,12,17,12,5,4]],["女式上衣",[22,11,15,13,4,3]],["针织衫/毛衣",[31,21,13,8,3,3]],["外套",[18,14,21,10,6,4]],["裤装",[27,9,10,7,3,3]],["半身裙",[21,8,11,9,3,2]]],
+          price: [["0-20 美元",[25,10,12,10,6,5]],["20-40 美元",[22,14,16,11,5,4]],["40-60 美元",[16,17,14,9,4,3]],["60 美元以上",[12,19,10,8,3,2]]],
+          region: [["加利福尼亚州",[28,16,15,13,6,5]],["得克萨斯州",[26,14,13,11,5,4]],["纽约州",[24,13,14,10,5,4]],["佛罗里达州",[22,12,13,9,4,3]],["伊利诺伊州",[20,11,12,8,4,3]],["华盛顿州",[18,10,11,8,3,3]],["新泽西州",[17,9,10,7,3,2]],["佐治亚州",[16,8,9,7,3,2]]]
+        }
+      },
+      coat: {
+        defaultDim: "channel",
+        dims: [
+          { key: "channel", label: "渠道" },
+          { key: "subcategory", label: "子品类" },
+          { key: "price", label: "价格带" },
+          { key: "region", label: "地区" },
+          { key: "sku", label: "货号" }
+        ],
+        columns: ["尺码问题", "质量问题", "描述不符", "颜色差异", "物流问题", "其他"],
+        rows: {
+          channel: [["美国站",[12,6,18,9,4,3]],["欧洲站",[9,5,13,7,3,2]]],
+          subcategory: [["风衣",[11,5,22,8,3,2]],["夹克",[14,7,15,6,3,2]],["短外套",[9,4,12,11,2,2]]],
+          price: [["0-30 美元",[10,5,17,8,3,2]],["30-60 美元",[13,6,14,7,3,2]]],
+          region: [["加利福尼亚州",[13,6,19,10,4,3]],["得克萨斯州",[12,6,18,9,4,3]],["纽约州",[11,5,17,8,3,2]],["佛罗里达州",[10,5,14,8,3,2]],["华盛顿州",[9,4,12,7,2,2]]],
+          sku: [["CT8821",[14,6,21,8,3,2]],["CT9014",[16,7,18,7,3,2]],["CT7745",[9,4,12,11,2,2]]]
+        }
+      },
+      sweater: {
+        defaultDim: "channel",
+        dims: [
+          { key: "channel", label: "渠道" },
+          { key: "subcategory", label: "子品类" },
+          { key: "price", label: "价格带" },
+          { key: "region", label: "地区" },
+          { key: "sku", label: "货号" }
+        ],
+        columns: ["尺码问题", "质量问题", "描述不符", "颜色差异", "物流问题", "其他"],
+        rows: {
+          channel: [["美国站",[26,18,11,6,2,2]],["欧洲站",[19,13,10,5,2,2]]],
+          subcategory: [["开衫毛衣",[31,16,9,5,1,2]],["套头毛衣",[28,21,8,4,1,2]],["针织衫",[22,14,11,5,2,2]]],
+          price: [["0-25 美元",[29,17,9,5,2,2]],["25-45 美元",[23,15,11,5,2,2]]],
+          region: [["加利福尼亚州",[28,19,10,6,2,2]],["得克萨斯州",[27,18,10,6,2,2]],["纽约州",[25,17,9,5,2,2]],["伊利诺伊州",[22,15,9,5,2,2]],["新泽西州",[20,14,9,4,2,2]]],
+          sku: [["SW4820",[32,15,8,4,1,2]],["SW5209",[24,22,9,4,1,2]],["SW6117",[21,14,12,5,2,2]]]
+        }
+      },
+      boots: {
+        defaultDim: "channel",
+        dims: [
+          { key: "channel", label: "渠道" },
+          { key: "subcategory", label: "子品类" },
+          { key: "price", label: "价格带" },
+          { key: "region", label: "地区" },
+          { key: "sku", label: "货号" }
+        ],
+        columns: ["尺码问题", "质量问题", "描述不符", "颜色差异", "物流问题", "其他"],
+        rows: {
+          channel: [["美国站",[24,10,8,14,9,3]],["欧洲站",[18,8,7,11,6,3]]],
+          subcategory: [["短靴",[27,9,7,10,5,2]],["中筒靴",[22,8,7,15,4,2]],["长靴",[19,7,8,9,6,3]]],
+          price: [["0-40 美元",[21,9,8,12,10,3]],["40-70 美元",[24,9,7,13,7,3]]],
+          region: [["加利福尼亚州",[25,10,8,15,9,3]],["得克萨斯州",[24,10,8,14,8,3]],["佛罗里达州",[22,9,8,12,8,3]],["纽约州",[21,9,7,11,7,3]],["佐治亚州",[19,8,7,10,6,3]]],
+          sku: [["BT3342",[28,9,7,10,6,2]],["BT4107",[20,8,7,16,5,2]],["BT5021",[18,7,8,9,8,3]]]
+        }
+      },
+      sku: {
+        defaultDim: "channel",
+        dims: [
+          { key: "channel", label: "渠道" },
+          { key: "variant", label: "子SKU" },
+          { key: "price", label: "价格带" },
+          { key: "region", label: "地区" },
+          { key: "lifecycle", label: "退货阶段" }
+        ],
+        columns: ["尺码问题", "质量问题", "描述不符", "颜色差异", "物流问题", "其他"],
+        rows: {
+          channel: [["美国站",[26,7,12,18,2,3]],["欧洲站",[12,5,9,8,1,4]]],
+          variant: [["RC6487-BL-S",[31,6,11,10,1,2]],["RC6487-GR-M",[18,7,10,19,1,3]],["RC6487-WH-L",[14,5,13,12,1,4]]],
+          price: [["0-20 美元",[24,6,11,17,2,3]],["20-35 美元",[20,7,11,13,1,3]]],
+          region: [["加利福尼亚州",[27,7,12,19,2,3]],["得克萨斯州",[26,7,11,18,2,3]],["纽约州",[23,6,11,15,2,3]],["佛罗里达州",[21,6,10,13,2,3]],["新泽西州",[19,5,10,12,1,3]]],
+          lifecycle: [["签收后 0-3 天",[9,3,7,6,1,3]],["签收后 4-7 天",[18,5,11,14,1,3]],["签收后 8-15 天",[29,8,13,17,2,3]]]
+        }
+      }
+    };
+
+    let appState = { viewKey: "dashboard", dimGroup: "", dimSubtab: "", trendMetric: "refundRate", trendPeriod: "90", expandedReason: "", heatmapDim: "category", actionReason: "", actionDepartment: "", quoteReason: "" };
+
+    const actionStrategyTemplates = {
+      "尺码问题": {
+        strategy: "统一尺码标准并修正版型位点，优先解决偏大、偏小和位点不一致问题。",
+        plays: ["复核胸围、肩宽、衣长、袖长、筒围等关键位点", "统一同款不同尺码的版型口径", "在页面上补充偏大/偏小提示和试穿建议"]
+      },
+      "质量问题": {
+        strategy: "围绕工艺、面料和二次销售痕迹做质检加严，缩短问题款持续流出窗口。",
+        plays: ["强化纽扣、扣眼、缝线、线头和破损质检", "核实大货面料成分与样品质感一致性", "严查污渍、异味和退货翻新再售问题"]
+      },
+      "描述不符": {
+        strategy: "聚焦页面表达与实物体验不一致问题，修正文案、版型和材质说明。",
+        plays: ["明确宽松/修身版型和偏大偏小建议", "补充面料厚薄感、弹性和材质成分说明", "增加细节近景与试穿对比"]
+      },
+      "颜色差异": {
+        strategy: "通过颜色校准、实拍替换和风险色管理，降低色差预期偏差。",
+        plays: ["增加燕麦色、白色、杏色、米色、黑色等易偏差颜色实拍", "统一图片后期标准和色卡说明", "更新高投诉色款页面图片"]
+      },
+      "物流问题": {
+        strategy: "拆分包装问题和时效问题，优先降低可控的逆向履约损耗。",
+        plays: ["加固外箱与鞋盒等易破损包装", "跟踪 FBA 回仓可售率和破损率", "优化发货时效与异常签收预警"]
+      },
+      "其他": {
+        strategy: "针对主观取消与无理由退货，通过用户分层和客服策略降低损失。",
+        plays: ["识别高频退货用户并分层运营", "补充售前问答和适穿建议", "评估退款不退货或权益限制策略"]
+      },
+      "面料/质量": {
+        strategy: "优先围绕面料触感与耐用性展开质量修正。",
+        plays: ["补做起球、扎感、洗后变形抽检", "优化面料触感描述与洗护说明", "对问题批次实施复盘闭环"]
+      },
+      "尺码/脚感": {
+        strategy: "围绕脚感、筒围和尺码建议优化商品体验表达。",
+        plays: ["补充脚背、筒围、鞋垫软硬度说明", "区分窄脚/宽脚建议", "同步修正高投诉尺码段"]
+      },
+      "太小": {
+        strategy: "对单款集中出现的偏小反馈优先做尺码提示和详情修正。",
+        plays: ["突出“偏紧建议大一码”提示", "补充胸围、衣长等关键位点信息", "对高投诉尺码的库存和转化联动复盘"]
+      },
+      "颜色不喜欢": {
+        strategy: "针对单款色差反馈优先修正页面视觉表现。",
+        plays: ["补自然光实拍和色卡说明", "弱化滤镜带来的色调偏差", "在高风险色款上增加特别提醒"]
+      },
+      "与描述不符": {
+        strategy: "针对单款页面承诺与用户体验偏差做快速修正。",
+        plays: ["修正材质、质感和版型文案", "增加细节近景和对比展示", "持续跟踪优化前后退款率与转化率"]
+      }
+    };
+
+    function normalizeReason(reason) {
+      if (actionStrategyTemplates[reason]) return reason;
+      if (reason.includes("尺码")) return "尺码问题";
+      if (reason.includes("质量") || reason.includes("面料")) return "质量问题";
+      if (reason.includes("描述")) return "描述不符";
+      if (reason.includes("颜色")) return "颜色差异";
+      if (reason.includes("物流")) return "物流问题";
+      return "其他";
+    }
+
+    function taskDepartmentByReason(reason) {
+      if (reason === "尺码问题" || reason === "太小" || reason === "尺码/脚感") return "技术部门";
+      if (reason === "质量问题" || reason === "面料/质量") return "品控部门";
+      if (reason === "描述不符" || reason === "颜色差异" || reason === "颜色不喜欢" || reason === "与描述不符") return "页面部门";
+      if (reason === "物流问题") return "品控部门";
+      return "页面部门";
+    }
+
+    function defaultOwnerByDepartment(dept) {
+      if (dept === "技术部门") return "版型工程负责人";
+      if (dept === "页面部门") return "页面运营负责人";
+      return "品控负责人";
+    }
+
+    function representativeTasksForReason(reason) {
+      const normalized = normalizeReason(reason);
+      const deptTasks = {
+        "技术部门": {
+          "尺码问题": [
+            "修正版型：缩小 S/M/L 码胸围、肩宽、衣长",
+            "统一标准：消除同款偏大与偏小并存问题",
+            "优化细节：调整肩腰围、袖长、肩带固定与面料弹性"
+          ],
+          "描述不符": [
+            "补充技术参数：输出版型、厚薄感和弹性说明",
+            "同步版型数据：确保页面尺码建议与实物一致"
+          ]
+        },
+        "页面部门": {
+          "尺码问题": [
+            "明确标注：补充偏大/偏小建议与宽松版型说明",
+            "增加尺码对比实拍：展示不同身材试穿效果"
+          ],
+          "描述不符": [
+            "实拍展示：增加面料、透视、尺码对比实拍图",
+            "明确标注：完整材质成分、版型与厚薄感",
+            "统一文案：收敛夸张卖点并校正页面承诺"
+          ],
+          "颜色差异": [
+            "管理色差：校准燕麦色、白色、杏色、米色、黑色等风险色款图片",
+            "增加自然光实拍与色卡对比"
+          ],
+          "其他": [
+            "补充售前 FAQ 和适穿提示，降低主观无理由退货"
+          ]
+        },
+        "品控部门": {
+          "质量问题": [
+            "杜绝二手：严查污渍、异味和退货翻新流程",
+            "加强工艺：强化纽扣、扣眼、缝线、破损、线头质检",
+            "面料一致性：确保大货质感与样品一致",
+            "出厂强检：将二手痕迹与缝制破损纳入重点"
+          ],
+          "物流问题": [
+            "出厂强检：加严外箱、鞋盒和包装防护检查",
+            "强化回仓质检：避免破损或二次销售痕迹商品再次发出"
+          ]
+        }
+      };
+      return [
+        {
+          department: "技术部门",
+          owner: "版型工程负责人",
+          items: deptTasks["技术部门"][normalized] || deptTasks["技术部门"]["尺码问题"]
+        },
+        {
+          department: "页面部门",
+          owner: "页面运营负责人",
+          items: deptTasks["页面部门"][normalized] || deptTasks["页面部门"]["描述不符"]
+        },
+        {
+          department: "品控部门",
+          owner: "品控负责人",
+          items: deptTasks["品控部门"][normalized] || deptTasks["品控部门"]["质量问题"]
+        }
+      ];
+    }
+
+    function inferTaskReason(taskName) {
+      if (/尺码|版型|试穿|大一码|偏修身/.test(taskName)) return "尺码问题";
+      if (/材质|页面|色卡|实拍|厚薄|文案/.test(taskName)) return "描述不符";
+      if (/起球|抽检|复检|胶水|品控/.test(taskName)) return "质量问题";
+      if (/包装|鞋盒|物流/.test(taskName)) return "物流问题";
+      if (/回访|客服|免运费|问答/.test(taskName)) return "其他";
+      return "描述不符";
+    }
+
+    function statusLabelByProgress(progress) {
+      if (progress >= 85) return "待验证";
+      if (progress >= 50) return "执行中";
+      return "待启动";
+    }
+
+    function buildTrendDataset(trend, period) {
+      const waveRate = [0, -0.4, 0.5, -0.3, 0.6, -0.5, 0.4, -0.35, 0.45, -0.2, 0.3, -0.1];
+      const waveLoss = [0, -14, 19, -11, 22, -18, 14, -12, 17, -9, 12, -6];
+      const applyWave = (arr, waves) => arr.map((value, index) => Number((value + waves[index]).toFixed(1)));
+      if (period === "30") {
+        return {
+          days: ["07", "14", "21", "30"],
+          refundRate: applyWave(trend.refundRate.slice(-4), waveRate),
+          loss: applyWave(trend.loss.slice(-4), waveLoss)
+        };
+      }
+      if (period === "60") {
+        return {
+          days: ["10", "20", "30", "40", "50", "60"],
+          refundRate: applyWave(trend.refundRate.slice(-6), waveRate),
+          loss: applyWave(trend.loss.slice(-6), waveLoss)
+        };
+      }
+      if (period === "180") {
+        const ratePrefix = [7.6, 7.9];
+        const lossPrefix = [218, 232];
+        return {
+          days: ["15", "30", "45", "60", "75", "90", "105", "120", "135", "150", "165", "180"],
+          refundRate: applyWave([...ratePrefix, ...trend.refundRate], waveRate),
+          loss: applyWave([...lossPrefix, ...trend.loss], waveLoss)
+        };
+      }
+      return {
+        days: trend.days,
+        refundRate: applyWave(trend.refundRate, waveRate),
+        loss: applyWave(trend.loss, waveLoss)
+      };
+    }
+
+    function getSemanticRows(viewKey) {
+      const rows = semanticSamples[viewKey] || semanticSamples.dashboard;
+      return rows.map(item => {
+        if (item.length >= 6) {
+          return {
+            comment: item[0],
+            primary: item[1],
+            secondary: item[2],
+            tertiary: item[3],
+            sentiment: item[4],
+            confidence: item[5]
+          };
+        }
+        return {
+          comment: item[0],
+          primary: item[1],
+          secondary: item[2],
+          tertiary: tertiaryMap[item[2]] || "待补充",
+          sentiment: item[3],
+          confidence: item[4]
+        };
+      });
+    }
+
+    function renderDimensions(dimensions, viewKey) {
+      const dimConfig = dimensionConfigLibrary[viewKey] || dimensionConfigLibrary.dashboard;
+      const activeGroup = appState.dimGroup || dimConfig.defaultGroup;
+      const currentGroup = dimConfig.groups.find(group => group.key === activeGroup) || dimConfig.groups[0];
+      const activeSubtab = appState.dimSubtab || dimConfig.defaultSubtab;
+      const currentSubtab = currentGroup.subtabs.find(tab => tab.key === activeSubtab) || currentGroup.subtabs[0];
+      const rows = dimConfig.data[currentSubtab.key] || [];
+      return `
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <h3>维度拆解</h3>
+              <p>先选择一级维度，再在子标签里继续细分，查看对应订单切面的退款指标表现。</p>
+            </div>
+            <span class="badge">${currentGroup.label} · ${currentSubtab.label}</span>
+          </div>
+          <div class="dim-group-row">
+            ${dimConfig.groups.map(group => `
+              <button class="tab-btn ${group.key === currentGroup.key ? "active" : ""}" data-dim-group="${group.key}">${group.label}</button>
+            `).join("")}
+          </div>
+          <div class="dim-subtab-row">
+            ${currentGroup.subtabs.map(tab => `
+              <button class="subtab-btn ${tab.key === currentSubtab.key ? "active" : ""}" data-dim-subtab="${tab.key}">${tab.label}</button>
+            `).join("")}
+          </div>
+          <div class="dim-grid">
+            <div class="dim-grid-head">
+              <div>${currentSubtab.label}</div>
+              <div>退款率</div>
+              <div>退款损失</div>
+              <div>高频问题</div>
+              <div style="text-align:right;">状态</div>
+            </div>
+            ${rows.map(row => `
+              <div class="dim-grid-row">
+                <div class="dim-name">${row[0]}</div>
+                <div>${row[1]}</div>
+                <div>${row[2]}</div>
+                <div>${row[3]}</div>
+                <div class="score ${row[4] === "高风险" ? "red" : row[4] === "关注" ? "amber" : "green"}">${row[4]}</div>
+              </div>
+            `).join("")}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderHeatmap(viewKey) {
+      const config = heatmapLibrary[viewKey] || heatmapLibrary.dashboard;
+      const dim = config.dims.find(item => item.key === appState.heatmapDim) ? appState.heatmapDim : config.defaultDim;
+      const rows = config.rows[dim] || [];
+      const colorFor = value => {
+        if (value >= 30) return "#d59a2c";
+        if (value >= 20) return "#bb8350";
+        if (value >= 12) return "#d8b28f";
+        return "#efe4d7";
+      };
+      return `
+        <section class="card heatmap-card" style="margin-top:18px; margin-bottom:18px;">
+          <div class="section-head">
+            <div>
+              <h3>退款原因交叉分析</h3>
+              <p>按选定维度查看退款原因一级标签的退款率分布，快速定位高风险交叉区。</p>
+            </div>
+            <span class="badge">Heatmap</span>
+          </div>
+          <div class="heatmap-toolbar">
+            ${config.dims.map(dimItem => `
+              <button class="tab-btn ${dimItem.key === dim ? "active" : ""}" data-heatmap-dim="${dimItem.key}">${dimItem.label}</button>
+            `).join("")}
+          </div>
+          <div class="heatmap-grid">
+            <div></div>
+            ${config.columns.map(col => `<div class="heatmap-head">${col}</div>`).join("")}
+            ${rows.map(row => `
+              <div class="heatmap-label">${row[0]}</div>
+              ${row[1].map((value, index) => `<div class="heat-cell" style="background:${colorFor(value)}" data-heat-label="${row[0]} × ${config.columns[index]}">${value}%</div>`).join("")}
+            `).join("")}
+          </div>
+          <div class="heatmap-note" id="heatmapNote">左侧为所选维度成员，上方为退款原因一级标签。颜色越深表示该维度与对应退款原因的退款率越高。</div>
+        </section>
+      `;
+    }
+
+    function renderSemanticAnalysis(viewKey) {
+      const samples = getSemanticRows(viewKey);
+      return `
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <h3>AI 语义分析结果</h3>
+              <p>示例展示退款评论经过 AI 清洗、归因和标签化后的结构化输出。</p>
+            </div>
+            <span class="badge">10 条评论样本</span>
+          </div>
+          <div class="semantic-table">
+            <div class="semantic-head">
+              <div>评论内容</div>
+              <div>一级标签</div>
+              <div>二级标签</div>
+              <div>三级标签</div>
+              <div>情感</div>
+              <div style="text-align:right;">置信度</div>
+            </div>
+            ${samples.map(item => `
+              <div class="semantic-row">
+                <div class="semantic-comment">${item.comment}</div>
+                <div><span class="mini-tag">${item.primary}</span></div>
+                <div class="semantic-meta">${item.secondary}</div>
+                <div class="semantic-meta">${item.tertiary}</div>
+                <div class="semantic-meta">${item.sentiment}</div>
+                <div class="confidence">${item.confidence}</div>
+              </div>
+            `).join("")}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderActions(actions, departments, insight, isSku) {
+      const reasons = insight.reasons.map(item => normalizeReason(item.label));
+      const uniqueReasons = [...new Set(reasons)];
+      const activeReason = appState.actionReason || uniqueReasons[0] || "尺码问题";
+      const strategyPack = actionStrategyTemplates[activeReason] || actionStrategyTemplates[normalizeReason(activeReason)] || actionStrategyTemplates["其他"];
+      const departmentTemplates = representativeTasksForReason(activeReason);
+      const activeDepartment = appState.actionDepartment || departmentTemplates[0].department;
+      const seededTasks = departmentTemplates.flatMap(template => template.items.map((item, index) => ({
+        name: item,
+        owner: template.owner,
+        department: template.department,
+        reason: activeReason,
+        priority: index === 0 ? "high" : index === 1 ? "mid" : "low",
+        progress: template.department === "技术部门" ? [68, 52, 41, 35][index] || 38 : template.department === "页面部门" ? [84, 72, 58, 46][index] || 44 : [61, 55, 49, 43][index] || 40,
+        eta: template.department === "技术部门" ? ["5 月 3 日", "5 月 5 日", "5 月 7 日", "5 月 8 日"][index] || "5 月 9 日" : template.department === "页面部门" ? ["4 月 29 日", "4 月 30 日", "5 月 2 日", "5 月 4 日"][index] || "5 月 5 日" : ["5 月 1 日", "5 月 2 日", "5 月 4 日", "5 月 6 日"][index] || "5 月 7 日"
+      })));
+      const scopedTasks = seededTasks.filter(task => task.department === activeDepartment);
+      const avgProgress = Math.round(scopedTasks.reduce((sum, task) => sum + task.progress, 0) / Math.max(scopedTasks.length, 1));
+      const highPriorityCount = scopedTasks.filter(task => task.priority === "high").length;
+      const validationCount = actions.validations.length;
+      return `
+        <section class="action-card">
+          <div class="section-head">
+            <div>
+              <h3>策略制定、行动派发与追踪</h3>
+              <p>围绕退款原因生成治理策略，联动责任部门派发任务并追踪执行效果。</p>
+            </div>
+            <span class="badge">Action Loop</span>
+          </div>
+          <div class="action-topbar">
+            ${uniqueReasons.map(reason => `
+              <button class="action-chip ${reason === activeReason ? "active" : ""}" data-action-reason="${reason}">
+                ${reason}
+              </button>
+            `).join("")}
+          </div>
+          <div class="action-summary">
+            <div class="action-metric">
+              <strong>当前原因</strong>
+              <div class="big">${activeReason}</div>
+            </div>
+            <div class="action-metric">
+              <strong>关联任务数</strong>
+              <div class="big">${scopedTasks.length}</div>
+            </div>
+            <div class="action-metric">
+              <strong>平均进度</strong>
+              <div class="big">${avgProgress}%</div>
+            </div>
+            <div class="action-metric">
+              <strong>高优先任务</strong>
+              <div class="big">${highPriorityCount}</div>
+            </div>
+          </div>
+          <div class="strategy-card">
+            <h4>策略建议</h4>
+            <div class="task-meta">${strategyPack.strategy}</div>
+          </div>
+          <div class="department-toolbar">
+            ${departmentTemplates.map(item => `
+              <button class="department-chip ${item.department === activeDepartment ? "active" : ""}" data-action-department="${item.department}">
+                ${item.department}
+              </button>
+            `).join("")}
+          </div>
+          <div class="action-layout">
+            <div class="dispatch-board">
+              ${scopedTasks.map(task => `
+                <div class="task-row active">
+                  <div class="task-main">
+                    <strong class="task-title">${task.name}</strong>
+                    <div class="task-tags">
+                      <div class="task-cause">${task.reason}</div>
+                    </div>
+                    <div class="task-action">可执行项：${task.name}</div>
+                    <div class="progress"><span style="width:${task.progress}%"></span></div>
+                  </div>
+                  <div class="task-side">
+                    <div class="task-second-row">
+                    <div class="task-col">
+                      <div class="task-col-label">优先级</div>
+                      <div class="tag ${priorityClass(task.priority)}">${priorityLabel(task.priority)}</div>
+                    </div>
+                    <div class="task-col">
+                      <div class="task-col-label">部门</div>
+                      <div class="task-owner">${task.department}</div>
+                    </div>
+                    <div class="task-col">
+                      <div class="task-col-label">责任人</div>
+                      <div class="task-owner">${task.owner}</div>
+                    </div>
+                    <div class="task-col">
+                      <div class="task-col-label">状态</div>
+                      <div class="task-meta" style="text-align:center;">${statusLabelByProgress(task.progress)}<br>${task.eta}</div>
+                    </div>
+                  </div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+            <div class="quote-list">
+              <div class="validation-card">
+                <strong>验证进展</strong>
+                <p>当前原因下已配置 ${validationCount} 个验证节点，系统会在动作完成后对退款率、评论标签占比和损失金额做前后对比。</p>
+              </div>
+              ${actions.validations.map(item => `
+                <div class="validation-card">
+                  <strong>${item.title}</strong>
+                  <p>${item.body}</p>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderEvidence(actions) {
+      const quotes = actions.quotes || [];
+      if (!quotes.length) return "";
+      const reasons = ["全部", ...new Set(quotes.map(item => item.tag))];
+      const activeReason = appState.quoteReason || "全部";
+      const filteredQuotes = activeReason === "全部" ? quotes : quotes.filter(item => item.tag === activeReason);
+      return `
+        <section class="card" style="margin-top:18px;">
+          <div class="section-head" style="margin-bottom:12px;">
+            <div>
+              <h3>评论证据摘录</h3>
+              <p>按退款原因筛选评论证据，快速查看 AI 归因背后的用户原声与图片样本。</p>
+            </div>
+            <span class="badge">Review Evidence</span>
+          </div>
+          <div class="action-topbar" style="margin-bottom:12px;">
+            ${reasons.map(reason => `
+              <button class="action-chip ${reason === activeReason ? "active" : ""}" data-quote-reason="${reason}">
+                ${reason}
+              </button>
+            `).join("")}
+          </div>
+          <div class="evidence-list">
+            ${filteredQuotes.map(item => `
+              <div class="evidence-card">
+                <div class="evidence-main">
+                  <div class="evidence-head">
+                    <div class="evidence-user">
+                      <div class="evidence-avatar">${item.user.slice(0, 1)}</div>
+                      <div class="evidence-user-meta">
+                        <div class="evidence-user-name">${item.user}</div>
+                        <div class="evidence-user-sub">${item.market} · ${item.date}</div>
+                      </div>
+                    </div>
+                    <div class="evidence-tag">${item.tag}</div>
+                  </div>
+                  <div class="evidence-text">${item.text}</div>
+                </div>
+                <div class="evidence-thumbs">
+                  ${(item.photos || []).map(photo => `<div class="evidence-thumb" style="background-image:${photo};"></div>`).join("")}
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderHero(view) {
+      return `
+        <section class="toolbar">
+          <div class="toolbar-main">
+            <h2 class="toolbar-title">${view.eyebrow}</h2>
+            <div class="toolbar-sub">
+              <span class="toolbar-chip">时间范围：近 90 天</span>
+              <span class="toolbar-chip">站点：美国站 / 欧洲站</span>
+              <span class="toolbar-chip">地区口径：州级订单地址</span>
+              <span class="toolbar-chip">口径：退款订单 + 评论语义标签</span>
+              <span class="toolbar-chip">刷新时间：2026-04-26 10:30</span>
+            </div>
+          </div>
+          <div class="toolbar-actions">
+            <span class="toolbar-pill">AI 洞察已开启</span>
+            <span class="toolbar-pill ghost">异常货号 ${view.actions.tasks.length} 项待跟进</span>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderSkuTop(view) {
+      if (!view.actions.quotes) return "";
+      return `
+        <section class="sku-card" style="margin-bottom:18px;">
+          <div class="sku-hero">
+            <div class="sku-image"></div>
+            <div>
+              <div class="eyebrow">${view.eyebrow}</div>
+              <h2 class="sku-title">RC6487 风险款单款画像</h2>
+              <p>结合样例数据中的退款评论，可见该款在美国站出现“颜色不喜欢”“面料不喜欢”“太小”“与描述不符”等复合型问题，适合用作单款闭环演示样本。</p>
+              <div class="chip-row">
+                <span class="chip">市场：美国站</span>
+                <span class="chip">核心标签：太小 / 颜色不喜欢 / 与描述不符</span>
+                <span class="chip">治理方向：页面 + 尺码建议优先</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function bindDynamicInteractions() {
+      document.querySelectorAll(".trend-point").forEach(point => {
+        point.addEventListener("mouseenter", () => {
+          document.querySelectorAll(".trend-point").forEach(item => {
+            item.classList.remove("active");
+            item.setAttribute("r", "4.5");
+          });
+          point.classList.add("active");
+          point.setAttribute("r", "7");
+          const tooltip = document.getElementById("trendTooltip");
+          const crosshair = document.getElementById("trendCrosshair");
+          if (tooltip) {
+            tooltip.innerHTML = `<strong>${point.dataset.day}</strong><div>${point.dataset.series}：${point.dataset.value}</div><div>${point.dataset.note}</div>`;
+          }
+          if (crosshair) {
+            crosshair.setAttribute("x1", point.dataset.x);
+            crosshair.setAttribute("x2", point.dataset.x);
+            crosshair.style.opacity = "1";
+          }
+        });
+      });
+
+      document.querySelectorAll(".insight-marker-btn").forEach(button => {
+        button.addEventListener("click", () => {
+          document.querySelectorAll(".insight-marker-btn").forEach(item => item.classList.remove("active"));
+          button.classList.add("active");
+          const panel = document.getElementById("insightDetailPanel");
+          if (panel) panel.textContent = button.dataset.detail;
+        });
+      });
+
+      document.querySelectorAll(".reason-detail-btn").forEach(button => {
+        button.addEventListener("click", () => {
+          appState.expandedReason = appState.expandedReason === button.dataset.reason ? "" : button.dataset.reason;
+          render(appState.viewKey);
+          const panel = document.getElementById("reasonDetailPanel");
+          const content = document.getElementById("reasonDetailContent");
+          const map = reasonSamples[appState.viewKey] || {};
+          const samples = map[button.dataset.reason] || [];
+          if (!panel || !content) return;
+          panel.hidden = false;
+          content.innerHTML = samples.map(item => `<div class="sample-item">${item}</div>`).join("") || `<div class="sample-item">暂无样本评论</div>`;
+        });
+      });
+
+      document.querySelectorAll("[data-dim-tab]").forEach(button => {
+        button.addEventListener("click", () => {
+          appState.dimTab = button.dataset.dimTab;
+          render(appState.viewKey);
+        });
+      });
+
+      document.querySelectorAll("[data-dim-group]").forEach(button => {
+        button.addEventListener("click", () => {
+          const config = dimensionConfigLibrary[appState.viewKey] || dimensionConfigLibrary.dashboard;
+          const group = config.groups.find(item => item.key === button.dataset.dimGroup);
+          appState.dimGroup = button.dataset.dimGroup;
+          appState.dimSubtab = group ? group.subtabs[0].key : "";
+          render(appState.viewKey);
+        });
+      });
+
+      document.querySelectorAll("[data-dim-subtab]").forEach(button => {
+        button.addEventListener("click", () => {
+          appState.dimSubtab = button.dataset.dimSubtab;
+          render(appState.viewKey);
+        });
+      });
+
+      document.querySelectorAll("[data-trend-metric]").forEach(button => {
+        button.addEventListener("click", () => {
+          appState.trendMetric = button.dataset.trendMetric;
+          render(appState.viewKey);
+        });
+      });
+
+      document.querySelectorAll("[data-trend-period]").forEach(button => {
+        button.addEventListener("click", () => {
+          appState.trendPeriod = button.dataset.trendPeriod;
+          render(appState.viewKey);
+        });
+      });
+
+      document.querySelectorAll("[data-heatmap-dim]").forEach(button => {
+        button.addEventListener("click", () => {
+          appState.heatmapDim = button.dataset.heatmapDim;
+          render(appState.viewKey);
+        });
+      });
+
+      document.querySelectorAll(".heat-cell").forEach(cell => {
+        cell.addEventListener("mouseenter", () => {
+          document.querySelectorAll(".heat-cell").forEach(item => item.classList.remove("active"));
+          cell.classList.add("active");
+          const note = document.getElementById("heatmapNote");
+          if (note) note.textContent = `${cell.dataset.heatLabel} 的退款率相对更高，建议优先结合评论语义和动作进度进一步排查。`;
+        });
+      });
+
+      document.querySelectorAll("[data-action-reason]").forEach(button => {
+        button.addEventListener("click", () => {
+          appState.actionReason = button.dataset.actionReason;
+          appState.actionDepartment = "";
+          render(appState.viewKey);
+        });
+      });
+
+      document.querySelectorAll("[data-action-department]").forEach(button => {
+        button.addEventListener("click", () => {
+          appState.actionDepartment = button.dataset.actionDepartment;
+          render(appState.viewKey);
+        });
+      });
+
+      document.querySelectorAll("[data-quote-reason]").forEach(button => {
+        button.addEventListener("click", () => {
+          appState.quoteReason = button.dataset.quoteReason;
+          render(appState.viewKey);
+        });
+      });
+    }
+
+    function render(viewKey) {
+      appState.viewKey = viewKey;
+      const view = pageData[viewKey];
+      const dimConfig = dimensionConfigLibrary[viewKey] || dimensionConfigLibrary.dashboard;
+      if (!appState.dimGroup) appState.dimGroup = dimConfig.defaultGroup;
+      const group = dimConfig.groups.find(item => item.key === appState.dimGroup) || dimConfig.groups[0];
+      if (!appState.dimSubtab || !group.subtabs.find(tab => tab.key === appState.dimSubtab)) {
+        appState.dimSubtab = group.subtabs[0].key;
+      }
+      const app = document.getElementById("app");
+
+      app.innerHTML = `
+        ${renderHero(view)}
+        ${viewKey === "sku" ? renderSkuTop(view) : ""}
+        ${renderKpis(viewKey, view.kpis)}
+        <div class="grid two-col" style="margin-bottom:18px;">
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>近 90 天指标趋势</h3>
+                <p>支持指标切换、时间周期切换与节点 hover 高亮。</p>
+              </div>
+              <div class="section-tools">
+                <span class="badge">Trend Chart</span>
+              </div>
+            </div>
+            <div class="trend-control-row">
+              <div class="control-group">
+                <span class="control-label">核心指标</span>
+                <button class="tab-btn ${appState.trendMetric === "refundRate" ? "active" : ""}" data-trend-metric="refundRate">退款率</button>
+                <button class="tab-btn ${appState.trendMetric === "loss" ? "active" : ""}" data-trend-metric="loss">损失指标</button>
+              </div>
+              <div class="control-group">
+                <span class="control-label">时间周期</span>
+                <button class="tab-btn ${appState.trendPeriod === "30" ? "active" : ""}" data-trend-period="30">30天</button>
+                <button class="tab-btn ${appState.trendPeriod === "60" ? "active" : ""}" data-trend-period="60">60天</button>
+                <button class="tab-btn ${appState.trendPeriod === "90" ? "active" : ""}" data-trend-period="90">90天</button>
+                <button class="tab-btn ${appState.trendPeriod === "180" ? "active" : ""}" data-trend-period="180">180天</button>
+              </div>
+            </div>
+            ${renderTrend(view.trend)}
+          </section>
+          ${renderInsight(view.insight)}
+        </div>
+        <div style="margin-top:18px; margin-bottom:18px;">
+          ${renderDimensions(view.dimensions, viewKey)}
+        </div>
+        <div class="grid equal-two-col">
+          ${renderReasonBreakdown(view.insight)}
+          ${renderSemanticAnalysis(viewKey)}
+        </div>
+        ${renderHeatmap(viewKey)}
+        ${renderActions(view.actions, view.insight.departments, view.insight, viewKey === "sku")}
+        ${renderEvidence(view.actions)}
+        <section class="card" style="margin-top:18px;">
+          <div class="section-head">
+            <div>
+              <h3>建议补充指标</h3>
+              <p>参考退款场景指标体系，可继续纳入经营判断。</p>
+            </div>
+            <span class="badge">BI Extension</span>
+          </div>
+          <div class="grid equal-two-col" style="margin-bottom:0;">
+            <div class="quote-list">
+              <div class="quote">
+                <strong>逆向物流成本占比</strong>
+                <p>衡量退货对利润的侵蚀程度，帮助决定是否触发退款不退货策略。</p>
+              </div>
+              <div class="quote">
+                <strong>SKU 风险分值</strong>
+                <p>结合销量、退款率与毛利损失，快速定位“高销量、高退款、高损失”的红区货号。</p>
+              </div>
+            </div>
+            <div class="quote-list">
+              <div class="quote">
+                <strong>二次销售率</strong>
+                <p>判断逆向履约链路的残值回收效率，支持仓储与品控优化。</p>
+              </div>
+              <div class="quote">
+                <strong>高退货用户识别</strong>
+                <p>按 90 天退款频次识别高风险用户，支持退货权益分层与客服策略优化。</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div class="footer-note">
+          说明：本 POC 依据 /Users/edy/Documents/GuanData/data_sample 中的字段结构与文档《子不语退款场景延展闭环方案_20260423_副本.md》《补充退货指标体系.md》设计，并补充演示数据以体现完整业务闭环。
+        </div>
+      `;
+      bindDynamicInteractions();
+    }
+
+    document.querySelectorAll(".nav-btn").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".nav-btn").forEach(item => item.classList.remove("active"));
+        button.classList.add("active");
+        appState.dimGroup = "";
+        appState.dimSubtab = "";
+        appState.expandedReason = "";
+        appState.heatmapDim = "";
+        appState.actionReason = "";
+        appState.actionDepartment = "";
+        appState.quoteReason = "";
+        render(button.dataset.view);
+      });
+    });
+
+    render("dashboard");
+  </script>
+</body>
+</html>
