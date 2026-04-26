@@ -42,6 +42,18 @@ static_dir = PROJECT_ROOT / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
+# 标签库管理React应用 (构建产物在 static/taglib/)
+taglib_dir = PROJECT_ROOT / "static" / "taglib"
+if taglib_dir.exists():
+    # 静态资源 (JS/CSS)
+    app.mount("/tag-library/assets", StaticFiles(directory=str(taglib_dir / "assets")), name="taglib_assets")
+
+    @app.get("/tag-library")
+    @app.get("/tag-library/{path:path}")
+    async def tag_library_app(path: str = ""):
+        """返回标签库React应用，支持React Router history模式."""
+        return FileResponse(str(taglib_dir / "index.html"))
+
 
 @app.get("/")
 async def root():
