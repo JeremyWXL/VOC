@@ -3116,16 +3116,28 @@ let allTagSystems = [];
 let libraryViewMode = 'grid'; // 'grid' | 'list'
 
 async function loadTagLibrary() {
+  const url = API() + '/api/tag-systems';
+  console.log('[VOC-DEBUG] loadTagLibrary 请求:', url);
   try {
-    const res = await fetch(API() + '/api/tag-systems');
-    const data = await res.json();
+    const res = await fetch(url);
+    console.log('[VOC-DEBUG] 响应状态:', res.status, res.statusText);
+    const text = await res.text();
+    console.log('[VOC-DEBUG] 响应内容前200字:', text.slice(0, 200));
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (jsonErr) {
+      console.error('[VOC-DEBUG] JSON解析失败:', jsonErr.message);
+      toast('加载标签库失败: 服务器返回非JSON数据', 'err');
+      return;
+    }
     allTagSystems = data.items || [];
     console.log('[VOC-DEBUG] loadTagLibrary 成功, 共', allTagSystems.length, '条');
     populateLibrarySceneFilter();
     renderTagLibrary();
     updateLibraryStats();
   } catch (e) {
-    console.error('[VOC-DEBUG] 加载标签库失败', e);
+    console.error('[VOC-DEBUG] 加载标签库失败:', e.message, e);
     toast('加载标签库失败: ' + e.message, 'err');
   }
 }
