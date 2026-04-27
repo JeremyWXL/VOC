@@ -38,10 +38,10 @@
     white-space: nowrap;
   }
   .toolbar button:hover, .toolbar label.btn:hover { background: #f0f0f0; border-color: #bbb; }
-  .toolbar button.primary { background: #2196F3; color: #fff; border-color: #2196F3; }
-  .toolbar button.primary:hover { background: #1976D2; }
-  .toolbar button.danger { background: #f44336; color: #fff; border-color: #f44336; }
-  .toolbar button.danger:hover { background: #d32f2f; }
+  .toolbar button.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .toolbar button.primary:hover { background: #1d4ed8; }
+  .toolbar button.danger { background: #dc2626; color: #fff; border-color: #dc2626; }
+  .toolbar button.danger:hover { background: #b91c1c; }
   .toolbar input[type="file"] { display: none; }
   .toolbar .stat { font-size: 12px; color: #666; margin-left: 10px; }
 
@@ -182,7 +182,7 @@
     transition: background 0.15s;
   }
   .popup-menu .menu-item:hover { background: #f0f0f0; }
-  .popup-menu .menu-item.delete { color: #f44336; }
+  .popup-menu .menu-item.delete { color: #dc2626; }
   .popup-menu .menu-item.delete:hover { background: #ffebee; }
   .popup-menu .divider {
     height: 1px;
@@ -215,6 +215,7 @@
 
   /* 不再使用遮罩层，避免阻挡画布滚动 */
 </style>
+  <link rel="stylesheet" href="/static/modern-theme.css?v=3">
 </head>
 <body>
 
@@ -226,7 +227,7 @@
   <input type="file" id="csvInput" accept=".csv" onchange="app.importCSV(this)">
   <button onclick="app.exportCSV()">📤 导出 CSV</button>
   <button class="primary" onclick="app.save()">💾 保存</button>
-  <button class="primary" onclick="app.saveToParent()" id="btnSaveToParent" style="display:none;background:#52c41a;border-color:#52c41a">✅ 保存并返回</button>
+  <button class="primary" onclick="app.saveToParent()" id="btnSaveToParent" style="display:none;background:#059669;border-color:#059669">✅ 保存并返回</button>
   <button onclick="app.expandAll()">▼ 全部展开</button>
   <button onclick="app.collapseAll()">▶ 全部折叠</button>
   <button class="danger" onclick="app.clear()">🗑️ 清空</button>
