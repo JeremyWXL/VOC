@@ -1,9 +1,9 @@
 """SQLite 数据层封装 — 最小可行实现."""
 
-import hashlib
 import sqlite3
 import tempfile
 import uuid
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -20,10 +20,14 @@ class Store:
         self.db_path = str(db_path or DEFAULT_DB_PATH)
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
 
+    @contextmanager
     def _conn(self):
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
-        return conn
+        try:
+            yield conn
+        finally:
+            conn.close()
 
     def init_db(self) -> None:
         """创建表和索引."""
@@ -80,6 +84,15 @@ class Store:
         );
         CREATE INDEX IF NOT EXISTS idx_tag_systems_preset ON tag_systems(is_preset);
         CREATE INDEX IF NOT EXISTS idx_tag_systems_scene ON tag_systems(scene_type);
+
+        CREATE TABLE IF NOT EXISTS mapping_configs (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            config_json TEXT NOT NULL,
+            created_at TEXT,
+            updated_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_mapping_configs_name ON mapping_configs(name);
         """
         with self._conn() as conn:
             conn.executescript(ddl)
@@ -150,7 +163,8 @@ class Store:
         with self._conn() as conn:
             for r in reviews:
                 content = (r.content or "").strip()
-                content_hash = hashlib.md5(content.encode("utf-8")).hexdigest()
+                from review_tagger.utils import compute_content_hash
+                content_hash = compute_content_hash(content)
                 cur = conn.execute(
                     """
                     INSERT INTO reviews (task_id, review_id, content, content_hash, status)
@@ -420,8 +434,62 @@ class Store:
             is_preset=0,
         )
 
+    # ------------------------------------------------------------------
+    # Mapping Configs
+    # ------------------------------------------------------------------
+
+    def create_mapping_config(self, name: str, config_json: str) -> str:
+        """保存映射配置，返回 id."""
+        cid = f"mc_{uuid.uuid4().hex[:12]}"
+        now = datetime.now().isoformat()
+        with self._conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO mapping_configs (id, name, config_json, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (cid, name, config_json, now, now),
+            )
+            conn.commit()
+        return cid
+
+    def get_mapping_config(self, cid: str) -> Optional[Dict[str, Any]]:
+        """获取单个映射配置."""
+        with self._conn() as conn:
+            row = conn.execute("SELECT * FROM mapping_configs WHERE id = ?", (cid,)).fetchone()
+            return dict(row) if row else None
+
+    def list_mapping_configs(self) -> List[Dict[str, Any]]:
+        """列出所有映射配置，按 updated_at DESC."""
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM mapping_configs ORDER BY updated_at DESC"
+            ).fetchall()
+            return [dict(r) for r in rows]
+
+    def update_mapping_config(self, cid: str, name: Optional[str] = None, config_json: Optional[str] = None) -> None:
+        """更新映射配置字段."""
+        updates: Dict[str, Any] = {}
+        if name is not None:
+            updates["name"] = name
+        if config_json is not None:
+            updates["config_json"] = config_json
+        if not updates:
+            return
+        updates["updated_at"] = datetime.now().isoformat()
+        cols = ", ".join(f"{k} = ?" for k in updates)
+        vals = list(updates.values()) + [cid]
+        with self._conn() as conn:
+            conn.execute(f"UPDATE mapping_configs SET {cols} WHERE id = ?", vals)
+            conn.commit()
+
+    def delete_mapping_config(self, cid: str) -> None:
+        """删除映射配置."""
+        with self._conn() as conn:
+            conn.execute("DELETE FROM mapping_configs WHERE id = ?", (cid,))
+            conn.commit()
+
     def migrate_presets(self, configs_dir: Path) -> None:
-        """将 configs/*.csv 导入为预置标签体系."""
         with self._conn() as conn:
             row = conn.execute("SELECT COUNT(*) as cnt FROM tag_systems WHERE is_preset = 1").fetchone()
             if row and row["cnt"] > 0:
@@ -620,3 +688,23 @@ def delete_tag_system(sid: str) -> None:
 
 def copy_tag_system(sid: str) -> str:
     return _get_default_store().copy_tag_system(sid)
+
+
+def create_mapping_config(name: str, config_json: str) -> str:
+    return _get_default_store().create_mapping_config(name, config_json)
+
+
+def get_mapping_config(cid: str) -> Optional[Dict[str, Any]]:
+    return _get_default_store().get_mapping_config(cid)
+
+
+def list_mapping_configs() -> List[Dict[str, Any]]:
+    return _get_default_store().list_mapping_configs()
+
+
+def update_mapping_config(cid: str, **kwargs) -> None:
+    return _get_default_store().update_mapping_config(cid, **kwargs)
+
+
+def delete_mapping_config(cid: str) -> None:
+    return _get_default_store().delete_mapping_config(cid)

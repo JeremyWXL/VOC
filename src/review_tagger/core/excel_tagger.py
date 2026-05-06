@@ -8,8 +8,7 @@ from loguru import logger
 
 from review_tagger.config import Settings
 from review_tagger.models import Review
-from review_tagger.llm.client import LLMClient, LLMRequest
-from review_tagger.llm.providers import OpenAIProvider, DeepSeekProvider, DashScopeProvider
+from review_tagger.llm.client import LLMClient, LLMRequest, create_provider
 from review_tagger.prompts.templates import build_tagging_prompt
 from review_tagger.prompts.examples import FEW_SHOT_EXAMPLES
 from review_tagger.loaders import (
@@ -19,6 +18,7 @@ from review_tagger.loaders import (
     save_tagged_excel,
 )
 from review_tagger.core.sharding import ShardingEngine, ShardProgress
+from review_tagger.utils import strip_markdown_code_blocks
 
 
 class ExcelTagger:
@@ -41,23 +41,8 @@ class ExcelTagger:
 
     def _create_llm_client(self) -> LLMClient:
         cfg = self.settings.llm
-        if cfg.provider == "deepseek":
-            provider = DeepSeekProvider(
-                api_key=cfg.api_key or "", timeout=cfg.timeout, max_retries=cfg.max_retries
-            )
-        elif cfg.provider == "dashscope":
-            provider = DashScopeProvider(
-                api_key=cfg.api_key or "", timeout=cfg.timeout, max_retries=cfg.max_retries
-            )
-        else:
-            provider = OpenAIProvider(
-                api_key=cfg.api_key or "",
-                base_url=cfg.base_url,
-                timeout=cfg.timeout,
-                max_retries=cfg.max_retries,
-            )
         return LLMClient(
-            provider=provider,
+            provider=create_provider(cfg),
             concurrency=cfg.concurrency,
             batch_size=cfg.batch_size,
             max_retries=cfg.max_retries,
@@ -216,6 +201,20 @@ class ExcelTagger:
             uncertain = full_result.get("uncertain", False)
             authenticity_score = full_result.get("authenticity_score", 1.0)
 
+            # 诊断日志：帮助排查为什么全是 uncertain
+            if uncertain:
+                logger.warning(
+                    f"[{rid}] 模型返回 uncertain=true, "
+                    f"评论: {review.content[:40]}, "
+                    f"原始响应: {resp.content[:200]}"
+                )
+            if not matches and not uncertain:
+                logger.warning(
+                    f"[{rid}] 模型返回空 matches 且 uncertain=false, "
+                    f"评论: {review.content[:40]}, "
+                    f"原始响应: {resp.content[:200]}"
+                )
+
             parsed["matches"] = matches
             parsed["uncertain"] = uncertain
             parsed["authenticity_score"] = authenticity_score
@@ -244,6 +243,7 @@ class ExcelTagger:
             text = text.rstrip("`").strip()
 
         result: Dict[str, Any] = {"matches": [], "uncertain": False, "authenticity_score": 1.0}
+        text = strip_markdown_code_blocks(text)
         try:
             data = json.loads(text)
             matches = data.get("matches", [])

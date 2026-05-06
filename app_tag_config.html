@@ -5,10 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>标签体系配置 - 画布编辑器</title>
 <style>
+  /* 统一设计系统变量 */
+  :root {
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-tertiary: #94a3b8;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --surface: #ffffff;
+    --surface-hover: #f8fafc;
+    --bg: #f1f5f9;
+    --border: #e2e8f0;
+    --success: #059669;
+    --success-light: #d1fae5;
+    --warning: #b45309;
+    --warning-light: #fef3c7;
+    --danger: #dc2626;
+    --danger-light: #fee2e2;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background: #f5f6f8;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
     overflow: hidden;
     height: 100vh;
     display: flex;
@@ -17,8 +36,8 @@
 
   /* 顶部工具栏 */
   .toolbar {
-    background: #fff;
-    border-bottom: 1px solid #e0e0e0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
     padding: 10px 20px;
     display: flex;
     align-items: center;
@@ -26,7 +45,7 @@
     flex-shrink: 0;
     z-index: 10;
   }
-  .toolbar h1 { font-size: 18px; margin-right: auto; color: #333; }
+  .toolbar h1 { font-size: 18px; margin-right: auto; color: var(--text); font-weight: 700; }
   .toolbar button, .toolbar label.btn {
     padding: 6px 14px;
     border: 1px solid #ddd;
@@ -43,14 +62,14 @@
   .toolbar button.danger { background: #dc2626; color: #fff; border-color: #dc2626; }
   .toolbar button.danger:hover { background: #b91c1c; }
   .toolbar input[type="file"] { display: none; }
-  .toolbar .stat { font-size: 12px; color: #666; margin-left: 10px; }
+  .toolbar .stat { font-size: 12px; color: var(--text-secondary); margin-left: 10px; }
 
   /* 画布 */
   .canvas-container {
     flex: 1;
     overflow: auto;
     position: relative;
-    background: #f5f6f8;
+    background: var(--bg);
   }
   .canvas {
     position: relative;
@@ -70,7 +89,8 @@
     padding: 8px 14px;
     border-radius: 10px;
     border: 2px solid;
-    background: #fff;
+    background: var(--surface);
+    color: var(--text);
     font-size: 14px;
     cursor: pointer;
     user-select: none;
@@ -97,32 +117,32 @@
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: #fff;
-    border: 2px solid #bbb;
+    background: var(--surface);
+    border: 2px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 16px;
     font-weight: bold;
-    color: #666;
+    color: var(--text-secondary);
     cursor: pointer;
     z-index: 10;
     line-height: 1;
   }
   .node-toggle:hover {
-    background: #f0f0f0;
-    border-color: #999;
+    background: var(--surface-hover);
+    border-color: var(--text-tertiary);
   }
 
-  /* 层级颜色 */
-  .node.level-0 { border-color: #E74C3C; background: #fdf2f2; }
-  .node.level-1 { border-color: #E67E22; background: #fef5e7; }
-  .node.level-2 { border-color: #27AE60; background: #eafaf1; }
-  .node.level-3 { border-color: #2980B9; background: #ebf5fb; }
-  .node.selected.level-0 { border-color: #c0392b; background: #fadbd8; }
-  .node.selected.level-1 { border-color: #d35400; background: #fdebd0; }
-  .node.selected.level-2 { border-color: #1e8449; background: #d5f5e3; }
-  .node.selected.level-3 { border-color: #2471a3; background: #d4e6f1; }
+  /* 层级颜色 —— 与 modern-theme.css 保持一致 */
+  .node.level-0 { border-color: #dc2626; background: #fef2f2; color: #7f1d1d; }
+  .node.level-1 { border-color: #ea580c; background: #fff7ed; color: #9a3412; }
+  .node.level-2 { border-color: #059669; background: #ecfdf5; color: #065f46; }
+  .node.level-3 { border-color: #2563eb; background: #eff6ff; color: #1e40af; }
+  .node.selected.level-0 { border-color: #b91c1c; background: #fee2e2; }
+  .node.selected.level-1 { border-color: #c2410c; background: #ffedd5; }
+  .node.selected.level-2 { border-color: #047857; background: #d1fae5; }
+  .node.selected.level-3 { border-color: #1d4ed8; background: #dbeafe; }
 
   .node .badge {
     position: absolute;
@@ -134,10 +154,10 @@
     color: #fff;
     font-weight: 700;
   }
-  .level-0 .badge { background: #E74C3C; }
-  .level-1 .badge { background: #E67E22; }
-  .level-2 .badge { background: #27AE60; }
-  .level-3 .badge { background: #2980B9; }
+  .level-0 .badge { background: #dc2626; }
+  .level-1 .badge { background: #ea580c; }
+  .level-2 .badge { background: #059669; }
+  .level-3 .badge { background: #2563eb; }
 
   /* 编辑状态 */
   .node.editing {
@@ -160,8 +180,8 @@
   /* 浮动菜单 */
   .popup-menu {
     position: absolute;
-    background: #fff;
-    border: 1px solid #e0e0e0;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 10px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.15);
     padding: 6px;
@@ -175,7 +195,7 @@
     border-radius: 6px;
     cursor: pointer;
     font-size: 13px;
-    color: #333;
+    color: var(--text);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -192,7 +212,7 @@
   .popup-menu .menu-item .shortcut {
     margin-left: auto;
     font-size: 11px;
-    color: #999;
+    color: var(--text-tertiary);
   }
 
   /* Toast */
@@ -201,8 +221,8 @@
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: #333;
-    color: #fff;
+    background: var(--surface);
+    color: var(--text);
     padding: 10px 24px;
     border-radius: 24px;
     font-size: 13px;
@@ -210,6 +230,8 @@
     transition: opacity 0.3s;
     pointer-events: none;
     z-index: 200;
+    box-shadow: 0 8px 32px rgba(15,23,42,0.15);
+    border: 1px solid var(--border);
   }
   .toast.show { opacity: 1; }
 
@@ -659,12 +681,18 @@ const app = {
     for (const r of rows) {
       lines.push(r.map(c => `"${c}"`).join(','));
     }
-    const blob = new Blob(["\uFEFF" + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const csvContent = lines.join('\n');
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = 'tag_hierarchy.csv'; a.click();
     URL.revokeObjectURL(url);
     this.toast('CSV 已导出');
+    // 如果在 iframe 中，自动同步给父页面
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'save-csv', csv: csvContent }, '*');
+      this.toast('已同步到工作台');
+    }
   },
   importCSV(input) {
     const file = input.files[0];

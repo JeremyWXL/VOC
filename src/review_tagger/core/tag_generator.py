@@ -10,10 +10,10 @@ from dataclasses import dataclass
 from loguru import logger
 
 from review_tagger.config import Settings, load_settings
-from review_tagger.llm.client import LLMClient
-from review_tagger.llm.providers import OpenAIProvider
+from review_tagger.llm.client import LLMClient, create_provider
 from review_tagger.core.scene_detector import SceneType
 from review_tagger.prompts.scene_prompts import build_tag_generation_prompt
+from review_tagger.utils import strip_markdown_code_blocks
 
 
 @dataclass
@@ -360,14 +360,8 @@ class TagGenerator:
 
     def _get_llm_client(self) -> LLMClient:
         if self._client is None:
-            provider = OpenAIProvider(
-                api_key=self.settings.llm.api_key,
-                base_url=self.settings.llm.base_url,
-                timeout=self.settings.llm.timeout,
-                max_retries=self.settings.llm.max_retries,
-            )
             self._client = LLMClient(
-                provider=provider,
+                provider=create_provider(self.settings.llm),
                 concurrency=self.settings.llm.concurrency,
                 max_retries=self.settings.llm.max_retries,
             )
@@ -400,9 +394,9 @@ class TagGenerator:
             is_template = True
             logger.info(f"使用模板生成标签: {scene_type.value}, {len(tags)} 条")
 
-            # LLM 增强（可选，暂不实现）
+            # TODO: LLM 增强（根据样本微调模板标签，降低空标签率）
             if use_llm_enhance and sample_reviews:
-                pass  # 未来扩展：根据样本微调标签
+                logger.info("LLM 增强生成标签: 功能开发中，当前使用模板标签")
 
         # 2. 无模板或 GENERAL → LLM 动态生成
         if not tags and sample_reviews:
@@ -432,45 +426,50 @@ class TagGenerator:
         scene_type: SceneType,
         sample_reviews: List[str],
     ) -> List[Dict[str, str]]:
-        """使用 LLM 动态生成标签."""
+        """使用 LLM 动态生成标签（同步入口）.
+
+        注意：此方法会启动一个临时事件循环。如果已在异步上下文中，
+        请直接使用 generate_async() 异步版本。
+        """
         import asyncio
 
-        client = self._get_llm_client()
-        messages = build_tag_generation_prompt(
-            scene_type=scene_type.value,
-            scene_description=SceneType.display_name(scene_type),
-            sample_reviews=sample_reviews[:15],
-        )
-
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # 已经在事件循环中（async 上下文）
-                import nest_asyncio
-                nest_asyncio.apply()
-
-            content = loop.run_until_complete(
-                client.call(
-                    messages=messages,
-                    model=self.settings.llm.model,
-                    temperature=0.3,
-                    max_tokens=2048,
-                )
+        async def _call_llm() -> str:
+            client = self._get_llm_client()
+            messages = build_tag_generation_prompt(
+                scene_type=scene_type.value,
+                scene_description=SceneType.display_name(scene_type),
+                sample_reviews=sample_reviews[:15],
+            )
+            return await client.call(
+                messages=messages,
+                model=self.settings.llm.model,
+                temperature=0.3,
+                max_tokens=2048,
             )
 
-            # 清理 markdown
-            content = content.strip()
-            if content.startswith("```"):
-                content = re.sub(r"^```(?:json)?\s*", "", content)
-                content = re.sub(r"\s*```$", "", content)
-
-            tags = json.loads(content)
-            if isinstance(tags, list):
-                return self._normalize_tags(tags)
+        try:
+            content = asyncio.run(_call_llm())
+        except RuntimeError as e:
+            if "asyncio.run() cannot be called from a running event loop" in str(e):
+                logger.error(
+                    "LLM 标签生成失败：当前已在事件循环中运行，"
+                    "请使用 TagGenerator.generate_async() 异步版本"
+                )
+                return []
+            logger.error(f"LLM 标签生成失败: {e}")
             return []
         except Exception as e:
             logger.error(f"LLM 标签生成失败: {e}")
             return []
+
+        content = strip_markdown_code_blocks(content)
+        try:
+            tags = json.loads(content)
+            if isinstance(tags, list):
+                return self._normalize_tags(tags)
+        except json.JSONDecodeError:
+            logger.error(f"LLM 返回内容无法解析为 JSON: {content[:200]}")
+        return []
 
     async def generate_async(
         self,

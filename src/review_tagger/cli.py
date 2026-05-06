@@ -52,9 +52,13 @@ def tag_excel(
         settings.llm.provider = provider
 
     # 检查 API Key
-    if not settings.llm.api_key:
+    api_key = settings.llm.api_key
+    if api_key is None or (isinstance(api_key, str) and not api_key.strip()):
         typer.echo("[red]错误: 未设置 LLM API Key[/red]")
-        typer.echo("请设置环境变量 OPENAI_API_KEY，或在配置文件中指定")
+        typer.echo("请通过以下方式之一设置：")
+        typer.echo("  1. 环境变量: export OPENAI_API_KEY=sk-xxx")
+        typer.echo("  2. 配置文件: review-tagger init-config --output config.yaml")
+        typer.echo("  3. CLI 参数: --config config.yaml")
         raise typer.Exit(1)
 
     tagger = ExcelTagger(settings)
@@ -108,25 +112,33 @@ def preview_prompt(
 @app.command("init-config")
 def init_config(output: str = typer.Option("config.yaml", "--output", "-o")):
     """生成示例配置文件."""
-    text = """llm:
-  provider: openai          # openai / deepseek / dashscope
-  api_key: ""               # 或设置环境变量 OPENAI_API_KEY
-  base_url: null            # 自定义 API 地址
-  model: gpt-4o-mini
-  max_tokens: 1024
-  temperature: 0.1
-  timeout: 60.0
-  max_retries: 3
-  concurrency: 5            # 并发数
-  batch_size: 10            # 每批条数
-  use_json_mode: true       # 使用 JSON Mode
+    text = """# 电商评论打标工具配置
+# 环境变量优先级高于此文件，支持变量：OPENAI_API_KEY, OPENAI_BASE_URL, LLM_MODEL
+
+llm:
+  provider: openai          # 可选: openai / deepseek / dashscope
+  api_key: ""               # LLM API Key（推荐通过环境变量 OPENAI_API_KEY 设置）
+  base_url: null            # 自定义 API 地址（如模型网关）
+  model: gpt-4o-mini        # 模型名称
+  max_tokens: 1024          # 单次最大输出 token
+  temperature: 0.1          # 温度（0.0~2.0，越低越稳定）
+  timeout: 60.0             # API 超时（秒）
+  max_retries: 3            # 失败重试次数
+  concurrency: 5            # 并发请求数
+  batch_size: 10            # 每批处理条数
+  use_json_mode: true       # 强制模型输出 JSON（降低解析失败率）
 
 tagger:
-  engine: llm
-  fallback_on_error: true
+  engine: llm               # llm / rule / hybrid
+  fallback_on_error: true   # LLM 失败时是否降级到规则引擎
+  rule_validation: true     # 是否用规则校验 LLM 结果
+  confidence_threshold: 0.7 # 标签置信度阈值（低于此值的标签会被过滤）
+  min_authenticity_score: 0.3  # 最低真实性评分（低于此值标记为虚假评论）
+  custom_tags_path: null    # 自定义标签体系文件路径
 """
     Path(output).write_text(text, encoding="utf-8")
     typer.echo(f"[green]配置文件已生成: {output}[/green]")
+    typer.echo("[dim]提示: 编辑文件填入 api_key，或通过环境变量 OPENAI_API_KEY 设置[/dim]")
 
 
 @app.command("serve")

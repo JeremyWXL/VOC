@@ -78,7 +78,7 @@ class TestLoadTagHierarchy:
             f.flush()
             path = f.name
 
-        with pytest.raises(ValueError, match="标签体系文件缺少列"):
+        with pytest.raises(ValueError, match="标签体系文件缺少必需列"):
             load_tag_hierarchy(path)
         Path(path).unlink()
 

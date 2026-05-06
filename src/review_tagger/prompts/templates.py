@@ -13,14 +13,15 @@ def build_system_prompt(tag_tree_text: str, custom_instructions: Optional[str] =
 
 ## 任务要求
 1. 仔细阅读评论内容，判断其提及了哪些方面的体验
-2.  ONLY 从上述标签体系中选择最匹配的标签，禁止创造体系外标签
+2. 只从上述标签体系中选择最匹配的标签，禁止创造体系外标签
 3. 一条评论可能匹配多个标签（多选），也可能没有匹配（输出空列表）
 4. 对每条匹配给出 confidence（0.0-1.0），只保留 confidence >= 0.7 的结果
 5. 在 reason 中简要说明匹配依据（10字以内）
 
 ## 额外判断要求
 
-1. **模糊评论识别**：如果评论内容过于简短、语义含糊、无法明确对应到任何标签，请在输出中设置 `"uncertain": true`，并在 `matches` 中返回一个特殊项 `{{"level1":"_uncertain","level2":"","level3":"","confidence":0.0,"reason":"评论过于模糊/信息不足"}}`
+1. **模糊评论识别（IMPORTANT）**：只有当评论完全没有任何可识别的信息（如只有一个字"好"、纯表情、完全无关内容）时，才设置 `"uncertain": true`。对于正常的短评论（如"质量好"、"物流快"、"尺码偏大"），应该正常打标，**不要**标记为 uncertain。
+   - uncertain=true 时，在 `matches` 中返回特殊项 `{{"level1":"_uncertain","level2":"","level3":"","confidence":0.0,"reason":"评论过于模糊/信息不足"}}`
 
 2. **真实性评分**（⚠️ 必须输出）：请同时评估这条评论看起来是否真实（真实用户评价 vs 刷单/模板/水军）。输出字段 `"authenticity_score"`：0.0~1.0。
    - 1.0 = 非常真实（具体细节、个性化表达、有真实使用场景）

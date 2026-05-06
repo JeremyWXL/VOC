@@ -8,6 +8,7 @@ import pandas as pd
 from loguru import logger
 
 from review_tagger.core.excel_tagger import ExcelTagger
+from review_tagger.utils import compute_content_hash
 from review_tagger.loaders import (
     _read_file,
     load_reviews_from_excel,
@@ -75,7 +76,7 @@ class IncrementalTagger(ExcelTagger):
                 key = r.id if r.id else ""
                 if key and key in existing_map:
                     continue
-                content_hash = hashlib.md5(r.content.strip().encode("utf-8")).hexdigest()
+                content_hash = compute_content_hash(r.content)
                 if content_hash in existing_map:
                     continue
                 reviews_to_tag.append(r)
@@ -141,7 +142,7 @@ class IncrementalTagger(ExcelTagger):
                 if content_col:
                     content = str(gid).strip()
                     if content:
-                        h = hashlib.md5(content.encode("utf-8")).hexdigest()
+                        h = compute_content_hash(content)
                         existing[h] = result
         else:
             for idx, row in df.iterrows():
@@ -154,7 +155,7 @@ class IncrementalTagger(ExcelTagger):
                 result = self._extract_matches_from_row(row)
                 existing[rid] = result
                 if content:
-                    h = hashlib.md5(content.encode("utf-8")).hexdigest()
+                    h = compute_content_hash(content)
                     existing[h] = result
 
         return existing
@@ -215,7 +216,7 @@ class IncrementalTagger(ExcelTagger):
             rid = r.id or ""
             res = new_map.get(rid)
             if not res:
-                content_hash = hashlib.md5(r.content.strip().encode("utf-8")).hexdigest()
+                content_hash = compute_content_hash(r.content)
                 res = existing_map.get(rid) or existing_map.get(content_hash)
             if not res:
                 res = {"review_id": rid, "matches": []}

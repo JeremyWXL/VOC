@@ -25,6 +25,8 @@ class OpenAIProvider(LLMProvider):
             max_retries=max_retries,
         )
         self._base_url = base_url
+        # 记住该模型是否不支持 JSON Mode，避免每次都浪费一次失败请求
+        self._json_mode_supported: Optional[bool] = None
 
     @property
     def name(self) -> str:
@@ -45,6 +47,10 @@ class OpenAIProvider(LLMProvider):
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
+        # 如果已经知道不支持 JSON Mode，直接跳过
+        if self._json_mode_supported is False and response_format:
+            response_format = None
+
         if response_format:
             params["response_format"] = response_format
         params.update(kwargs)
@@ -52,6 +58,8 @@ class OpenAIProvider(LLMProvider):
         try:
             resp = await self._client.chat.completions.create(**params)
             content = resp.choices[0].message.content or ""
+            if self._json_mode_supported is None and response_format:
+                self._json_mode_supported = True
             logger.debug(
                 f"LLM call: model={params['model']}, "
                 f"prompt_tokens={resp.usage.prompt_tokens if resp.usage else '?'}, "
@@ -62,8 +70,19 @@ class OpenAIProvider(LLMProvider):
             from openai import OpenAIError
             if isinstance(e, OpenAIError):
                 err_msg = str(e).lower()
-                if response_format and "json_object" in err_msg and "not supported" in err_msg:
-                    logger.warning(f"模型不支持 json_object，自动回退到文本模式: {e}")
+                # 更宽松的 JSON mode 不支持检测
+                json_not_supported = (
+                    response_format
+                    and (
+                        "json_object" in err_msg
+                        or ("response_format" in err_msg and "type" in err_msg)
+                        or "unsupported" in err_msg
+                        or "not supported" in err_msg
+                    )
+                )
+                if json_not_supported:
+                    self._json_mode_supported = False
+                    logger.warning(f"模型不支持 json_object，已自动关闭 JSON Mode")
                     params.pop("response_format", None)
                     resp = await self._client.chat.completions.create(**params)
                     content = resp.choices[0].message.content or ""

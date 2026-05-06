@@ -29,7 +29,12 @@ def load_reviews_from_excel(
     """从 Excel 加载评论，返回 Review 列表和原始 DataFrame."""
     df = _read_file(path, **kwargs)
     if content_column not in df.columns:
-        raise ValueError(f"评论文件缺少列 '{content_column}'，可用列: {list(df.columns)}")
+        available = ", ".join(f"'{c}'" for c in df.columns)
+        raise ValueError(
+            f"评论文件缺少列 '{content_column}'\n"
+            f"可用列: {available}\n"
+            f"提示: 使用 --content-col 参数指定正确的评论内容列名"
+        )
 
     reviews = []
     for idx, row in df.iterrows():
@@ -53,7 +58,12 @@ def load_tag_hierarchy(path: str) -> Dict[str, Any]:
     required = {"一级标签", "二级标签", "三级标签"}
     missing = required - set(df.columns)
     if missing:
-        raise ValueError(f"标签体系文件缺少列: {missing}，可用列: {list(df.columns)}")
+        available = ", ".join(f"'{c}'" for c in df.columns)
+        raise ValueError(
+            f"标签体系文件缺少必需列: {', '.join(missing)}\n"
+            f"可用列: {available}\n"
+            f"提示: 标签体系文件必须包含 '一级标签', '二级标签', '三级标签' 三列"
+        )
 
     tree: Dict[str, Any] = {}
     for _, row in df.iterrows():

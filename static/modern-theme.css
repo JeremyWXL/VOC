@@ -81,6 +81,15 @@ body {
   background: var(--primary-light) !important;
   color: var(--primary-hover) !important;
 }
+
+/* Sidebar submenu (dark bg variant in workbench) */
+.app-sidebar-subitem {
+  color: rgba(255,255,255,0.85) !important;
+}
+.app-sidebar-subitem:hover, .app-sidebar-subitem.active {
+  color: #fff !important;
+  background: rgba(24,144,255,0.12) !important;
+}
 .app-sidebar-toggle {
   color: var(--text-tertiary) !important;
   border-top: 1px solid var(--border) !important;

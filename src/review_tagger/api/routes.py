@@ -201,7 +201,8 @@ async def preview_prompt(
 async def start_tagging(
     background_tasks: BackgroundTasks,
     review_file_id: str = Form(...),
-    tag_file_id: str = Form(...),
+    tag_file_id: Optional[str] = Form(None),
+    tag_system_id: Optional[str] = Form(None),
     content_column: str = Form("评论内容"),
     id_column: Optional[str] = Form(None),
     output_format: str = Form("wide"),
@@ -718,8 +719,16 @@ from review_tagger.core.tag_mapping import (
 )
 from review_tagger.core.multi_tagger import MultiTagger
 
-# 内存中暂存映射配置（按临时 key）
+# 内存中暂存映射配置（按临时 key）—— 保留向后兼容
 _mapping_configs: Dict[str, TagMappingConfig] = {}
+
+
+class SaveMappingConfigPayload(BaseModel):
+    """保存映射配置到数据库的 payload."""
+    name: str
+    profiles: List[Dict[str, Any]]
+    rules: List[Dict[str, Any]]
+    default_profile_id: Optional[str] = None
 
 
 @router.post("/tag-profiles")
@@ -767,7 +776,7 @@ class MappingConfigPayload(BaseModel):
 
 @router.post("/tag-mapping-config")
 async def save_mapping_config(payload: MappingConfigPayload):
-    """保存标签映射配置，返回 config_key."""
+    """保存标签映射配置（内存模式，返回 config_key）."""
     config_key = f"mapping_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{id(payload) % 10000}"
     try:
         config = TagMappingConfig.from_dict(payload.model_dump())
@@ -777,13 +786,92 @@ async def save_mapping_config(payload: MappingConfigPayload):
         raise HTTPException(status_code=400, detail=f"配置格式错误: {e}")
 
 
+@router.post("/mapping-configs")
+async def create_mapping_config(payload: SaveMappingConfigPayload):
+    """持久化保存标签映射配置到 SQLite，返回持久化 id."""
+    try:
+        config = TagMappingConfig.from_dict(payload.model_dump(exclude={"name"}))
+        config_json = json.dumps(config.to_dict(), ensure_ascii=False)
+        cid = db_store.create_mapping_config(name=payload.name, config_json=config_json)
+        return {"id": cid, "name": payload.name, "profiles_count": len(config.profiles), "rules_count": len(config.rules)}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"配置格式错误: {e}")
+
+
+@router.get("/mapping-configs")
+async def list_mapping_configs():
+    """列出所有持久化的映射配置."""
+    configs = db_store.list_mapping_configs()
+    result = []
+    for c in configs:
+        try:
+            data = json.loads(c["config_json"])
+            result.append({
+                "id": c["id"],
+                "name": c["name"],
+                "profiles_count": len(data.get("profiles", [])),
+                "rules_count": len(data.get("rules", [])),
+                "created_at": c["created_at"],
+                "updated_at": c["updated_at"],
+            })
+        except Exception:
+            result.append({
+                "id": c["id"],
+                "name": c["name"],
+                "profiles_count": 0,
+                "rules_count": 0,
+                "created_at": c["created_at"],
+                "updated_at": c["updated_at"],
+            })
+    return {"items": result}
+
+
+@router.get("/mapping-configs/{cid}")
+async def get_mapping_config(cid: str):
+    """获取单个映射配置的完整内容."""
+    row = db_store.get_mapping_config(cid)
+    if not row:
+        raise HTTPException(status_code=404, detail="映射配置不存在")
+    try:
+        data = json.loads(row["config_json"])
+    except Exception:
+        data = {}
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "config": data,
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
+
+
+@router.delete("/mapping-configs/{cid}")
+async def delete_mapping_config(cid: str):
+    """删除映射配置."""
+    db_store.delete_mapping_config(cid)
+    return {"success": True}
+
+
+def _get_mapping_config(config_key: str) -> Optional[TagMappingConfig]:
+    """获取映射配置：先查内存，再查 SQLite."""
+    if config_key in _mapping_configs:
+        return _mapping_configs[config_key]
+    row = db_store.get_mapping_config(config_key)
+    if row:
+        try:
+            return TagMappingConfig.from_dict(json.loads(row["config_json"]))
+        except Exception:
+            pass
+    return None
+
+
 @router.post("/tag-mapping-preview")
 async def preview_mapping(
     review_file_id: str = Form(...),
     config_key: str = Form(...),
 ):
     """预览映射结果：查看每条评论匹配到什么标签方案."""
-    config = _mapping_configs.get(config_key)
+    config = _get_mapping_config(config_key)
     if not config:
         raise HTTPException(status_code=404, detail="映射配置不存在或已过期")
 
@@ -826,7 +914,7 @@ async def start_multi_tagging(
     max_shards: int = Form(10),
 ):
     """启动多标签体系映射打标任务."""
-    config = _mapping_configs.get(config_key)
+    config = _get_mapping_config(config_key)
     if not config:
         raise HTTPException(status_code=404, detail="映射配置不存在或已过期，请重新保存配置")
 

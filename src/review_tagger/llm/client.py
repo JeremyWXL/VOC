@@ -9,6 +9,31 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 from review_tagger.llm.provider import LLMProvider
 
 
+def create_provider(cfg) -> LLMProvider:
+    """根据配置创建对应的 LLM Provider（消除各处重复逻辑）."""
+    from review_tagger.llm.providers import OpenAIProvider, DeepSeekProvider, DashScopeProvider
+
+    if cfg.provider == "deepseek":
+        return DeepSeekProvider(
+            api_key=cfg.api_key or "",
+            timeout=cfg.timeout,
+            max_retries=cfg.max_retries,
+        )
+    elif cfg.provider == "dashscope":
+        return DashScopeProvider(
+            api_key=cfg.api_key or "",
+            timeout=cfg.timeout,
+            max_retries=cfg.max_retries,
+        )
+    else:
+        return OpenAIProvider(
+            api_key=cfg.api_key or "",
+            base_url=cfg.base_url,
+            timeout=cfg.timeout,
+            max_retries=cfg.max_retries,
+        )
+
+
 @dataclass
 class LLMRequest:
     """单个 LLM 请求."""

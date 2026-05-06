@@ -9,9 +9,9 @@ from dataclasses import dataclass
 from loguru import logger
 
 from review_tagger.config import Settings, load_settings
-from review_tagger.llm.client import LLMClient
-from review_tagger.llm.providers import OpenAIProvider
+from review_tagger.llm.client import LLMClient, create_provider
 from review_tagger.prompts.scene_prompts import build_scene_detection_prompt
+from review_tagger.utils import strip_markdown_code_blocks
 
 
 class SceneType(str, Enum):
@@ -91,7 +91,7 @@ SCENE_KEYWORDS: Dict[SceneType, List[str]] = {
     ],
     SceneType.FOOD_CATERING: [
         "餐厅", "服务员", "上菜", "菜品", "菜单", "点菜", "就餐", "用餐",
-        " waiter", " waitress", "大厨", "厨师", "包厢", "排队", "等位",
+        "大厨", "厨师", "包厢", "排队", "等位",
     ],
     SceneType.HOTEL: [
         "酒店", "房间", "前台", "入住", "退房", "客房", "大床", "双床",
@@ -125,14 +125,8 @@ class SceneDetector:
 
     def _get_llm_client(self) -> LLMClient:
         if self._client is None:
-            provider = OpenAIProvider(
-                api_key=self.settings.llm.api_key,
-                base_url=self.settings.llm.base_url,
-                timeout=self.settings.llm.timeout,
-                max_retries=self.settings.llm.max_retries,
-            )
             self._client = LLMClient(
-                provider=provider,
+                provider=create_provider(self.settings.llm),
                 concurrency=self.settings.llm.concurrency,
                 max_retries=self.settings.llm.max_retries,
             )
@@ -254,12 +248,7 @@ class SceneDetector:
             response_format={"type": "json_object"},
         )
 
-        # 清理可能的 markdown 代码块
-        content = content.strip()
-        if content.startswith("```"):
-            content = re.sub(r"^```(?:json)?\s*", "", content)
-            content = re.sub(r"\s*```$", "", content)
-
+        content = strip_markdown_code_blocks(content)
         data = json.loads(content)
 
         scene_str = data.get("scene_type", "general")

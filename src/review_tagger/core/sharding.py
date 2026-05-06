@@ -8,9 +8,8 @@ from loguru import logger
 
 from review_tagger.config import Settings
 from review_tagger.models import Review
-from review_tagger.llm.client import LLMClient, LLMRequest
+from review_tagger.llm.client import LLMClient, LLMRequest, create_provider
 from review_tagger.llm.provider import LLMProvider
-from review_tagger.llm.providers import OpenAIProvider, DeepSeekProvider, DashScopeProvider
 
 
 @dataclass
@@ -169,26 +168,11 @@ class ShardingEngine:
     def create_llm_client(self) -> LLMClient:
         """创建 LLMClient 实例（每个 worker 共享同一个 provider，但各自独立 client 以隔离限流）."""
         cfg = self.settings.llm
-        if cfg.provider == "deepseek":
-            provider = DeepSeekProvider(
-                api_key=cfg.api_key or "", timeout=cfg.timeout, max_retries=cfg.max_retries
-            )
-        elif cfg.provider == "dashscope":
-            provider = DashScopeProvider(
-                api_key=cfg.api_key or "", timeout=cfg.timeout, max_retries=cfg.max_retries
-            )
-        else:
-            provider = OpenAIProvider(
-                api_key=cfg.api_key or "",
-                base_url=cfg.base_url,
-                timeout=cfg.timeout,
-                max_retries=cfg.max_retries,
-            )
         return LLMClient(
-            provider=provider,
-            concurrency=self.settings.llm.concurrency,
-            batch_size=self.settings.llm.batch_size,
-            max_retries=self.settings.llm.max_retries,
+            provider=create_provider(cfg),
+            concurrency=cfg.concurrency,
+            batch_size=cfg.batch_size,
+            max_retries=cfg.max_retries,
         )
 
     async def run(
@@ -215,12 +199,18 @@ class ShardingEngine:
             )
             return [await worker.run(shards[0], parse_fn)]
 
-        # 多片并行：为每片创建独立的 LLMClient（隔离限流）
+        # 多片并行：所有 shard 共享同一个 LLMClient，避免总并发失控
+        shared_client = self.create_llm_client()
+        # 调整共享 client 的并发数：总并发 / shard 数，确保不超过 API 限流
+        shard_concurrency = max(1, self.settings.llm.concurrency // len(shards))
+        shared_client.concurrency = shard_concurrency
+        shared_client._semaphore = asyncio.Semaphore(shard_concurrency)
+
         workers: List[ShardWorker] = []
         for idx, shard_reviews in enumerate(shards):
             worker = ShardWorker(
                 shard_id=idx,
-                llm_client=self.create_llm_client(),
+                llm_client=shared_client,
                 tag_tree_text=tag_tree_text,
                 progress_callback=self._on_shard_progress,
             )

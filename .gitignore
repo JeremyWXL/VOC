@@ -72,3 +72,6 @@ output/
 # Backup
 *.bak
 *.db
+test_scene_detect.py
+test_tagging_diagnostic.py
+/data/samples/*.xlsx
